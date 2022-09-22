@@ -1,0 +1,162 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  ~ Copyright (C) 2019-2022 Xcalibyte (Shenzhen) Limited.
+  ~ Licensed under the Apache License, Version 2.0 (the "License");
+  ~ you may not use this file except in compliance with the License.
+  ~ You may obtain a copy of the License at
+  ~ http://www.apache.org/licenses/LICENSE-2.0
+  ~ Unless required by applicable law or agreed to in writing, software
+  ~ distributed under the License is distributed on an "AS IS" BASIS,
+  ~ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+  ~ See the License for the specific language governing permissions and
+  ~ limitations under the License.
+  -->
+
+<!-- Created with Jaspersoft Studio version 6.8.0.final using JasperReports Library version 6.8.0-2ed8dfabb690ff337a5797129f2cd92902b0c87b  -->
+<jasperReport xmlns="http://jasperreports.sourceforge.net/jasperreports" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://jasperreports.sourceforge.net/jasperreports http://jasperreports.sourceforge.net/xsd/jasperreport.xsd" name="sub_directory_priority" pageWidth="485" pageHeight="800" whenNoDataType="NoDataSection" columnWidth="485" leftMargin="0" rightMargin="0" topMargin="0" bottomMargin="0" uuid="d4c49da0-8dcb-479e-8e07-ca559ceac2d3">
+    <property name="com.jaspersoft.studio.data.sql.tables" value=""/>
+    <style name="default" isDefault="true" vTextAlign="Middle" fontName="SansSerif"/>
+    <parameter name="SCAN_ID" class="java.lang.String">
+        <defaultValueExpression><![CDATA[$P{REPORT_PARAMETERS_MAP}.getOrDefault( "SCAN_ID", null )]]></defaultValueExpression>
+    </parameter>
+    <parameter name="RULE_SET_ID" class="java.lang.String">
+        <defaultValueExpression><![CDATA[$P{REPORT_PARAMETERS_MAP}.getOrDefault( "RULE_SET_ID", null )]]></defaultValueExpression>
+    </parameter>
+    <queryString language="SQL">
+        <![CDATA[select sfp.project_relative_path, count(distinct i.id) issue_count,
+       SUM(CASE WHEN ri.priority = '1' THEN 1 ELSE 0 END) level_1,
+       SUM(CASE WHEN ri.priority = '2' THEN 1 ELSE 0 END) level_2,
+       SUM(CASE WHEN ri.priority = '3' THEN 1 ELSE 0 END) level_3
+        from issue_v2 i
+        inner join scan_file sf on (sf.id = i.scan_file_id)
+        left join scan_file sfp on (sf.parent_path = sfp.project_relative_path and sfp.scan_task_id = i.scan_task_id)
+        left join rule_information ri on (ri.id = i.rule_information_id)
+        left join rule_set rs on (rs.id = ri.rule_set_id)
+        where i.scan_task_id::text = $P{SCAN_ID}
+          and rs.id::text = $P{RULE_SET_ID}
+        group by sfp.project_relative_path
+        order by issue_count desc]]>
+    </queryString>
+    <field name="project_relative_path" class="java.lang.String">
+        <property name="com.jaspersoft.studio.field.label" value="project_relative_path"/>
+        <property name="com.jaspersoft.studio.field.tree.path" value="scan_file"/>
+    </field>
+    <field name="issue_count" class="java.lang.Long">
+        <property name="com.jaspersoft.studio.field.label" value="issue_count"/>
+    </field>
+    <field name="level_1" class="java.lang.Long">
+        <property name="com.jaspersoft.studio.field.label" value="level_1"/>
+    </field>
+    <field name="level_2" class="java.lang.Long">
+        <property name="com.jaspersoft.studio.field.label" value="level_2"/>
+    </field>
+    <field name="level_3" class="java.lang.Long">
+        <property name="com.jaspersoft.studio.field.label" value="level_3"/>
+    </field>
+    <columnHeader>
+        <band height="35">
+            <textField>
+                <reportElement x="0" y="0" width="315" height="35" uuid="1cbf7cf8-b2e5-4844-9a4b-42e61fa8831f"/>
+                <textElement>
+                    <font isBold="true"/>
+                </textElement>
+                <textFieldExpression><![CDATA[$R{header.most_vulnerable_directories}]]></textFieldExpression>
+            </textField>
+            <textField>
+                <reportElement x="315" y="0" width="65" height="30" uuid="0d5cbf03-3572-4065-a4b2-a54ac2c22f73"/>
+                <textElement textAlignment="Center" verticalAlignment="Bottom">
+                    <font isBold="true"/>
+                </textElement>
+                <textFieldExpression><![CDATA[$R{total.total_defects}]]></textFieldExpression>
+            </textField>
+            <textField>
+                <reportElement x="380" y="0" width="35" height="30" forecolor="#E5001C" uuid="f1630ac8-7bda-4773-82de-6369303b56d5"/>
+                <textElement textAlignment="Center" verticalAlignment="Bottom">
+                    <font isBold="true"/>
+                </textElement>
+                <textFieldExpression><![CDATA[$R{high}]]></textFieldExpression>
+            </textField>
+            <textField>
+                <reportElement x="415" y="0" width="35" height="30" forecolor="#F06E1A" uuid="18716499-b59a-4b49-b409-f8ec4419d065"/>
+                <textElement textAlignment="Center" verticalAlignment="Bottom">
+                    <font isBold="true"/>
+                </textElement>
+                <textFieldExpression><![CDATA[$R{medium}]]></textFieldExpression>
+            </textField>
+            <textField>
+                <reportElement x="450" y="0" width="35" height="30" forecolor="#00AEE6" uuid="7e62bff2-d2f9-40d4-8cb1-ea8f7f04363e"/>
+                <textElement textAlignment="Center" verticalAlignment="Bottom">
+                    <font isBold="true"/>
+                </textElement>
+                <textFieldExpression><![CDATA[$R{low}]]></textFieldExpression>
+            </textField>
+        </band>
+    </columnHeader>
+    <detail>
+        <band height="20" splitType="Stretch">
+            <property name="com.jaspersoft.studio.unit.height" value="px"/>
+            <frame>
+                <reportElement x="0" y="0" width="485" height="15" uuid="c199ea2e-adca-48af-a0a9-e31f939d0f3b"/>
+                <box>
+                    <pen lineWidth="0.5" lineColor="#BABCBE"/>
+                    <topPen lineWidth="0.0" lineStyle="Solid" lineColor="#000000"/>
+                    <leftPen lineWidth="0.0" lineStyle="Solid" lineColor="#000000"/>
+                    <bottomPen lineWidth="1.0" lineStyle="Solid" lineColor="#BABCBE"/>
+                    <rightPen lineWidth="0.0" lineStyle="Solid" lineColor="#000000"/>
+                </box>
+                <image scaleImage="FillFrame" hAlign="Right" vAlign="Middle">
+                    <reportElement x="380" y="0" width="35" height="15" uuid="37f4f96e-5af8-4831-b66f-c7a491eb7c94"/>
+                    <imageExpression><![CDATA["jasperreport/template/resources/images/bg_high.svg"]]></imageExpression>
+                </image>
+                <image scaleImage="FillFrame" hAlign="Right" vAlign="Middle">
+                    <reportElement x="415" y="0" width="35" height="15" uuid="6b45af09-8d08-44a0-b8c7-f0140de1ede1"/>
+                    <imageExpression><![CDATA["jasperreport/template/resources/images/bg_medium.svg"]]></imageExpression>
+                </image>
+                <image scaleImage="FillFrame" hAlign="Right" vAlign="Middle">
+                    <reportElement x="450" y="0" width="35" height="15" uuid="c050532b-170e-4e38-9d4d-f963dff5b845"/>
+                    <imageExpression><![CDATA["jasperreport/template/resources/images/bg_low.svg"]]></imageExpression>
+                </image>
+                <textField>
+                    <reportElement x="0" y="0" width="315" height="15" uuid="f850c809-b98e-4f2c-a9b1-66adb203004e"/>
+                    <textElement>
+                        <font size="8" isBold="true"/>
+                    </textElement>
+                    <textFieldExpression><![CDATA[$F{project_relative_path}]]></textFieldExpression>
+                </textField>
+                <textField pattern="#,##0.###;(#,##0.###-)">
+                    <reportElement x="315" y="0" width="65" height="15" uuid="14ce04b5-197e-4b01-b362-d7a897939102"/>
+                    <textElement textAlignment="Center">
+                        <font size="8"/>
+                    </textElement>
+                    <textFieldExpression><![CDATA[$F{issue_count}]]></textFieldExpression>
+                </textField>
+                <textField pattern="#,##0.###;(#,##0.###-)">
+                    <reportElement x="380" y="0" width="35" height="13" forecolor="#FFFFFF" backcolor="#FFFFFF" uuid="3e82d9b3-a352-4575-b4a9-78242e8c7eeb"/>
+                    <textElement textAlignment="Center">
+                        <font size="8"/>
+                    </textElement>
+                    <textFieldExpression><![CDATA[$F{level_1}]]></textFieldExpression>
+                </textField>
+                <textField pattern="#,##0.###;(#,##0.###-)">
+                    <reportElement x="415" y="0" width="35" height="13" forecolor="#FFFFFF" backcolor="#FFFFFF" uuid="2c82a8b9-e1d5-4036-a695-540c6ab3c446"/>
+                    <textElement textAlignment="Center">
+                        <font size="8"/>
+                    </textElement>
+                    <textFieldExpression><![CDATA[$F{level_2}]]></textFieldExpression>
+                </textField>
+                <textField pattern="#,##0.###;(#,##0.###-)">
+                    <reportElement x="450" y="0" width="35" height="13" forecolor="#FFFFFF" backcolor="#FFFFFF" uuid="001a40ec-20ec-4dcf-8227-2bcf0f696b42"/>
+                    <textElement textAlignment="Center">
+                        <font size="8"/>
+                    </textElement>
+                    <textFieldExpression><![CDATA[$F{level_3}]]></textFieldExpression>
+                </textField>
+            </frame>
+        </band>
+    </detail>
+    <noData>
+        <band height="15">
+            <property name="com.jaspersoft.studio.unit.height" value="px"/>
+        </band>
+    </noData>
+</jasperReport>

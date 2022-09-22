@@ -1,0 +1,227 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!--
+  ~ Copyright (C) 2019-2022 Xcalibyte (Shenzhen) Limited.
+  ~ Licensed under the Apache License, Version 2.0 (the "License");
+  ~ you may not use this file except in compliance with the License.
+  ~ You may obtain a copy of the License at
+  ~ http://www.apache.org/licenses/LICENSE-2.0
+  ~ Unless required by applicable law or agreed to in writing, software
+  ~ distributed under the License is distributed on an "AS IS" BASIS,
+  ~ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+  ~ See the License for the specific language governing permissions and
+  ~ limitations under the License.
+  -->
+
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.xcal.api.mapper.ProjectSummaryMapper">
+
+    <resultMap id="projectSummary" type="com.xcal.api.entity.v3.ProjectSummary">
+        <result property="id" column="id" jdbcType="OTHER"
+                typeHandler="com.xcal.api.config.UUIDTypeHandler"/>
+        <result property="projectId" column="project_id" jdbcType="VARCHAR"/>
+        <result property="name" column="name" jdbcType="VARCHAR"/>
+        <result property="createdBy" column="created_by" jdbcType="VARCHAR"/>
+        <result property="createdOn" column="created_on" jdbcType="TIMESTAMP"/>
+        <result property="modifiedBy" column="modified_by" jdbcType="VARCHAR"/>
+        <result property="modifiedOn" column="modified_on" jdbcType="TIMESTAMP"/>
+        <association property="summary" resultMap="project_summary"/>
+    </resultMap>
+
+
+
+    <delete id="deleteProjectSummaryWithProjectId">
+        delete
+        from project_summary
+        where project_id = #{projectId, jdbcType=OTHER, typeHandler=com.xcal.api.config.UUIDTypeHandler}::uuid ;
+    </delete>
+    <insert id="insertProjectSummaryWithProjectId">
+        <!--copy from scan task summary-->
+        insert into project_summary (project_id,name,value)
+        select
+            #{projectId, jdbcType=OTHER, typeHandler=com.xcal.api.config.UUIDTypeHandler}::uuid,
+            name,
+            value
+        from scan_task_summary sts where sts.scan_task_id =(
+        select id from scan_task st2 where st2.created_on =(
+        select max(created_on) from scan_task st where project_id = #{projectId, jdbcType=OTHER, typeHandler=com.xcal.api.config.UUIDTypeHandler}::uuid
+        ) and project_id = #{projectId, jdbcType=OTHER, typeHandler=com.xcal.api.config.UUIDTypeHandler}::uuid
+        );
+
+        <!--prepare scanTaskId-->
+        insert into project_summary (project_id,name,value)
+        select
+            #{projectId, jdbcType=OTHER, typeHandler=com.xcal.api.config.UUIDTypeHandler}::uuid,
+            'scanTaskId',
+            id
+        from scan_task st2 where st2.created_on =(
+        select max(created_on) from scan_task st where project_id = #{projectId, jdbcType=OTHER, typeHandler=com.xcal.api.config.UUIDTypeHandler}::uuid
+        ) and project_id = #{projectId, jdbcType=OTHER, typeHandler=com.xcal.api.config.UUIDTypeHandler}::uuid;
+
+        <!--prepare scanStartAt-->
+        insert into project_summary (project_id,name,value)
+        select
+            #{projectId, jdbcType=OTHER, typeHandler=com.xcal.api.config.UUIDTypeHandler}::uuid as project_id ,
+            'scanStartAt' as name,
+            trunc(extract(epoch from scan_start_at) * 1000)
+        from scan_task st
+        where st.project_id=#{projectId, jdbcType=OTHER, typeHandler=com.xcal.api.config.UUIDTypeHandler}::uuid
+        and st.created_on =(
+        select max(created_on) from scan_task st2 where project_id = #{projectId, jdbcType=OTHER, typeHandler=com.xcal.api.config.UUIDTypeHandler}::uuid
+        );
+
+        <!--prepare scanEndAt-->
+        insert into project_summary (project_id,name,value)
+        select
+            #{projectId, jdbcType=OTHER, typeHandler=com.xcal.api.config.UUIDTypeHandler}::uuid as project_id ,
+            'scanEndAt' as name,
+            trunc(extract(epoch from scan_end_at) * 1000)
+        from scan_task st
+        where st.project_id=#{projectId, jdbcType=OTHER, typeHandler=com.xcal.api.config.UUIDTypeHandler}::uuid
+        and st.created_on =(
+        select max(created_on) from scan_task st2 where project_id = #{projectId, jdbcType=OTHER, typeHandler=com.xcal.api.config.UUIDTypeHandler}::uuid
+        );
+
+        <!--prepare lang-->
+        insert into project_summary (project_id,name,value)
+        select
+            #{projectId, jdbcType=OTHER, typeHandler=com.xcal.api.config.UUIDTypeHandler}::uuid as project_id ,
+            pca.name,
+            pca.value
+        from project_config_attribute pca left join project_config pc on pca.project_config_id =pc.id
+        where pc.project_uuid=#{projectId, jdbcType=OTHER, typeHandler=com.xcal.api.config.UUIDTypeHandler}::uuid
+            and pca.name ='lang'
+            and pc.status='ACTIVE'
+        limit 1;
+    </insert>
+
+    <select id="getProjectRisk"  resultType="String">
+        select
+            <![CDATA[
+            (case when avg(criticality) <=3 then 'LOW'
+            when avg(criticality)<=6 then 'MEDIUM'
+            else 'HIGH' end)
+            ]]>
+        from "issue_group" as t
+        left join "issue_file" as f1 on f1.id = t.src_file_path_id and f1.scan_task_id = t.scan_task_id
+        left join "issue_file" as f2 on f2.id = t.sink_file_path_id and f2.scan_task_id = t.scan_task_id
+        left join "issue_string" as fs on fs.id = t.function_name_id and fs.scan_task_id = t.scan_task_id
+        left join "issue_string" as vs on vs.id = t.variable_name_id and vs.scan_task_id = t.scan_task_id
+        left join "user" as u on t.assign_to = u.id
+        left join (select rule_code, count(1) as issue_group_count from "issue_group" where project_id =
+        #{projectId, jdbcType=OTHER, typeHandler=com.xcal.api.config.UUIDTypeHandler}::uuid group by rule_code) as rc on
+        rc.rule_code = t.rule_code
+        where t.project_id = #{projectId, jdbcType=OTHER, typeHandler=com.xcal.api.config.UUIDTypeHandler}::uuid
+        <if test="ruleCodes != null and ruleCodes.size() > 0">
+            and
+            <foreach collection="ruleCodes" open="(" close=")" separator=" or " item="item">
+                <trim suffixOverrides="and">
+                    <if test="item.csvCode != null">
+                        t.rule_code = #{item.csvCode} and
+                    </if>
+                    <choose>
+                        <when test='item.criticality == "L"'>
+                            t.criticality between 1 and 3 and
+                        </when>
+                        <when test='item.criticality == "M"'>
+                            t.criticality between 4 and 6 and
+                        </when>
+                        <when test='item.criticality == "H"'>
+                            t.criticality between 7 and 9 and
+                        </when>
+                    </choose>
+                </trim>
+            </foreach>
+        </if>
+        <if test="ruleSets != null">
+            and t.rule_set in
+            <foreach collection="ruleSets" open="(" close=")" separator=", " item="item">
+                #{item}
+            </foreach>
+        </if>
+        <choose>
+            <when test='pathCategory == "H"'>
+                <if test="filePaths != null">
+                    and
+                    <foreach collection="filePaths" open="(" close=")" separator=" or " item="item">
+                        f1.path similar to '($h)?/'||#{item}||'%' or f2.path similar to '($h)?/'||#{item}||'%'
+                    </foreach>
+                    <if test="filePaths == null">
+                        and (f1.path similar to '$h/%' or f2.path similar to '$h/%')
+                    </if>
+                </if>
+            </when>
+            <when test='pathCategory == "T"'>
+                <if test="filePaths != null">
+                    and
+                    <foreach collection="filePaths" open="(" close=")" separator=" or " item="item">
+                        f1.path similar to '($t)?/'||#{item}||'%' or f2.path similar to '($t)?/'||#{item}||'%'
+                    </foreach>
+                </if>
+                <if test="filePaths == null">
+                    and (f1.path similar to '($t)?/%' or f2.path similar to '($t)?/%')
+                </if>
+            </when>
+            <otherwise>
+                <if test="filePaths != null">
+                    and
+                    <foreach collection="filePaths" open="(" close=")" separator=" or " item="item">
+                        f1.path similar to '($[ht])?/'||#{item}||'%' or f2.path similar to '($[ht])?/'||#{item}||'%'
+                    </foreach>
+                </if>
+            </otherwise>
+        </choose>
+        <if test="certainty != null">
+            and t.certainty = #{certainty}
+        </if>
+        <if test="dsrType!=null and dsrType.size()>0">
+            and (
+            <trim suffixOverrides="or">
+                <if test='dsrType.contains("F")'>
+                    (t.dsr = 'F') or
+                </if>
+                <if test='dsrType.contains("N")'>
+                    (t.dsr = 'N') or
+                </if>
+                <if test='dsrType.contains("E")'>
+                    (t.dsr = 'E') or (t.dsr = 'L') or
+                </if>
+                <!-- deprecated. P is same with L, will remove it later -->
+                <if test='dsrType.contains("P")'>
+                    (t.dsr = 'P')
+                </if>
+            </trim>
+            )
+        </if>
+        <if test="scanTaskId != null">
+            and t.scan_task_id=#{scanTaskId}
+        </if>
+        <choose>
+            <when test='criticality == "L"'>
+                and t.criticality between 1 and 3
+            </when>
+            <when test='criticality == "M"'>
+                and t.criticality between 4 and 6
+            </when>
+            <when test='criticality == "H"'>
+                and t.criticality between 7 and 9
+            </when>
+        </choose>
+        <if test="searchValues!=null and !searchValues.isEmpty()">
+            and
+            <foreach collection="searchValues" open="(" close=")" separator=" or " item="searchValue">
+                (t.id like CONCAT('%',#{searchValue},'%')
+                or f1."path" like CONCAT('%',#{searchValue},'%')
+                or f2."path" like CONCAT('%',#{searchValue},'%')
+                or fs.str like CONCAT('%',#{searchValue},'%')
+                or vs.str like CONCAT('%',#{searchValue},'%')
+                )
+            </foreach>
+        </if>
+        and t.dsr != 'F';
+    </select>
+
+</mapper>
+
+

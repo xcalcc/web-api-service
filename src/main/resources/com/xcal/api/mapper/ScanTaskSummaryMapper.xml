@@ -1,0 +1,168 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!--
+  ~ Copyright (C) 2019-2022 Xcalibyte (Shenzhen) Limited.
+  ~ Licensed under the Apache License, Version 2.0 (the "License");
+  ~ you may not use this file except in compliance with the License.
+  ~ You may obtain a copy of the License at
+  ~ http://www.apache.org/licenses/LICENSE-2.0
+  ~ Unless required by applicable law or agreed to in writing, software
+  ~ distributed under the License is distributed on an "AS IS" BASIS,
+  ~ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+  ~ See the License for the specific language governing permissions and
+  ~ limitations under the License.
+  -->
+
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.xcal.api.mapper.ScanTaskSummaryMapper">
+
+    <delete id="deleteScanTaskSummaryByScanTaskId">
+        delete from scan_task_summary sts
+        where sts.scan_task_id = #{scanTaskId, jdbcType=OTHER, typeHandler=com.xcal.api.config.UUIDTypeHandler}::uuid
+        and name not in ('lines','files');
+
+    </delete>
+    <insert id="insertScanTaskSummary">
+
+        <!-- baselineIssueCount -->
+        insert into scan_task_summary (scan_task_id,name,value)
+        SELECT #{scanTaskId, jdbcType=OTHER, typeHandler=com.xcal.api.config.UUIDTypeHandler}::uuid, 'baseline.'||sts.name, sts.value
+        from scan_task_summary sts
+        WHERE sts.scan_task_id=(
+            <!--get the scan task with that baseline commit id-->
+            SELECT st2.id FROM scan_task st2
+            LEFT JOIN project_config_attribute pca2 ON st2.project_config_id =pca2.project_config_id AND pca2.name='commitId'
+            WHERE
+            st2.project_id=#{projectId, jdbcType=OTHER, typeHandler=com.xcal.api.config.UUIDTypeHandler}::uuid
+            AND pca2.value=
+            (
+            <!--get baseline commit id of scan task-->
+            SELECT pca.value FROM scan_task st
+            LEFT JOIN project_config_attribute pca ON st.project_config_id =pca.project_config_id AND pca.name='baselineCommitId'
+            WHERE st.id=#{scanTaskId, jdbcType=OTHER, typeHandler=com.xcal.api.config.UUIDTypeHandler}::uuid
+            AND st.project_id=#{projectId, jdbcType=OTHER, typeHandler=com.xcal.api.config.UUIDTypeHandler}::uuid
+            order by st.created_on desc
+            LIMIT 1
+            )
+            order by st2.created_on desc
+            LIMIT 1
+        )
+        AND sts.name like '%issues'
+        AND sts.name not like 'baseline%'
+        ;
+
+        <!-- baselineCommitId -->
+        insert into scan_task_summary (scan_task_id,name,value)
+        SELECT #{scanTaskId, jdbcType=OTHER, typeHandler=com.xcal.api.config.UUIDTypeHandler}::uuid, 'baselineCommitId', pca.value
+        FROM scan_task st
+        LEFT JOIN project_config_attribute pca ON st.project_config_id =pca.project_config_id AND pca.name='baselineCommitId'
+        WHERE st.id=#{scanTaskId, jdbcType=OTHER, typeHandler=com.xcal.api.config.UUIDTypeHandler}::uuid
+        AND st.project_id=#{projectId, jdbcType=OTHER, typeHandler=com.xcal.api.config.UUIDTypeHandler}::uuid
+        order by st.created_on desc
+        limit 1
+        ;
+
+        <!--rule version-->
+        insert into scan_task_summary (scan_task_id,name,value)
+        select #{scanTaskId, jdbcType=OTHER, typeHandler=com.xcal.api.config.UUIDTypeHandler}::uuid,'rule.version.'||rule_set, 1 as value  from issue_group igv
+        where igv.project_id =#{projectId, jdbcType=OTHER, typeHandler=com.xcal.api.config.UUIDTypeHandler}::uuid
+        and igv.scan_task_id=#{scanTaskId, jdbcType=OTHER, typeHandler=com.xcal.api.config.UUIDTypeHandler}::uuid
+        and igv.dsr!='F'
+        group by rule_set;
+
+        <!--rule id-->
+        insert into scan_task_summary (scan_task_id,name,value)
+        select #{scanTaskId, jdbcType=OTHER, typeHandler=com.xcal.api.config.UUIDTypeHandler}::uuid,'rule.id.'||rule_set, rule_set as value  from issue_group igv
+        where igv.project_id =#{projectId, jdbcType=OTHER, typeHandler=com.xcal.api.config.UUIDTypeHandler}::uuid
+        and igv.scan_task_id=#{scanTaskId, jdbcType=OTHER, typeHandler=com.xcal.api.config.UUIDTypeHandler}::uuid
+        and igv.dsr!='F'
+        group by rule_set;
+
+        <!--issues-->
+        insert into scan_task_summary (scan_task_id,name,value)
+        select #{scanTaskId, jdbcType=OTHER, typeHandler=com.xcal.api.config.UUIDTypeHandler}::uuid,'issues', count(*) as value  from issue_group igv
+        where igv.project_id =#{projectId, jdbcType=OTHER, typeHandler=com.xcal.api.config.UUIDTypeHandler}::uuid
+        and igv.scan_task_id=#{scanTaskId, jdbcType=OTHER, typeHandler=com.xcal.api.config.UUIDTypeHandler}::uuid
+        and igv.dsr!='F';
+
+        <!--count by rule code-->
+        insert into scan_task_summary (scan_task_id,name,value)
+        select #{scanTaskId, jdbcType=OTHER, typeHandler=com.xcal.api.config.UUIDTypeHandler}::uuid,'ruleCode.'||rule_code, count(*) as issues  from issue_group igv
+        where igv.project_id =#{projectId, jdbcType=OTHER, typeHandler=com.xcal.api.config.UUIDTypeHandler}::uuid
+        and igv.scan_task_id=#{scanTaskId, jdbcType=OTHER, typeHandler=com.xcal.api.config.UUIDTypeHandler}::uuid
+        and igv.dsr!='F'
+        group by rule_code;
+
+        <!--count by rule set, rule code-->
+        insert into scan_task_summary (scan_task_id,name,value)
+        select #{scanTaskId, jdbcType=OTHER, typeHandler=com.xcal.api.config.UUIDTypeHandler}::uuid,rule_set||'.ruleCode.'||rule_code , count(*) as issues  from issue_group igv
+        where igv.project_id =#{projectId, jdbcType=OTHER, typeHandler=com.xcal.api.config.UUIDTypeHandler}::uuid
+        and igv.scan_task_id=#{scanTaskId, jdbcType=OTHER, typeHandler=com.xcal.api.config.UUIDTypeHandler}::uuid
+        and igv.dsr!='F'
+        group by rule_set , rule_code;
+
+        <!--count by rule set-->
+        insert into scan_task_summary (scan_task_id,name,value)
+        select #{scanTaskId, jdbcType=OTHER, typeHandler=com.xcal.api.config.UUIDTypeHandler}::uuid,rule_set||'.issues', count(*) as issues  from issue_group igv
+        where igv.project_id =#{projectId, jdbcType=OTHER, typeHandler=com.xcal.api.config.UUIDTypeHandler}::uuid
+        and igv.scan_task_id=#{scanTaskId, jdbcType=OTHER, typeHandler=com.xcal.api.config.UUIDTypeHandler}::uuid
+        and igv.dsr!='F'
+        group by rule_set;
+
+        <!--count by rule set, certainty-->
+        insert into scan_task_summary (scan_task_id,name,value)
+        select #{scanTaskId, jdbcType=OTHER, typeHandler=com.xcal.api.config.UUIDTypeHandler}::uuid,rule_set||'.certainty.'|| certainty ,count(*) as issues  from issue_group igv
+        where igv.project_id =#{projectId, jdbcType=OTHER, typeHandler=com.xcal.api.config.UUIDTypeHandler}::uuid
+        and igv.scan_task_id=#{scanTaskId, jdbcType=OTHER, typeHandler=com.xcal.api.config.UUIDTypeHandler}::uuid
+        and igv.dsr!='F'
+        group by  rule_set ,certainty;
+
+        <!--count by certainty-->
+        insert into scan_task_summary (scan_task_id,name,value)
+        select  #{scanTaskId, jdbcType=OTHER, typeHandler=com.xcal.api.config.UUIDTypeHandler}::uuid,'certainty.'||certainty ,count(*) as issues  from issue_group igv
+        where igv.project_id =#{projectId, jdbcType=OTHER, typeHandler=com.xcal.api.config.UUIDTypeHandler}::uuid
+        and igv.scan_task_id=#{scanTaskId, jdbcType=OTHER, typeHandler=com.xcal.api.config.UUIDTypeHandler}::uuid
+        and igv.dsr!='F'
+        group by  certainty;
+
+        <!--count by criticality-->
+        <![CDATA[
+
+        insert into scan_task_summary (scan_task_id,name,value)
+        select #{scanTaskId, jdbcType=OTHER, typeHandler=com.xcal.api.config.UUIDTypeHandler}::uuid,rule_set||'.criticality.'|| (case when criticality <=3 then 'LOW'
+                when criticality<=6 then 'MEDIUM'
+                else 'HIGH' end) ,count(*) as issues  from issue_group igv
+        where igv.project_id =#{projectId, jdbcType=OTHER, typeHandler=com.xcal.api.config.UUIDTypeHandler}::uuid
+        and igv.scan_task_id=#{scanTaskId, jdbcType=OTHER, typeHandler=com.xcal.api.config.UUIDTypeHandler}::uuid
+        and igv.dsr!='F'
+        group by  rule_set ,(case when criticality <=3 then 'LOW'
+                when criticality<=6 then 'MEDIUM'
+                else 'HIGH' end);
+
+        insert into scan_task_summary (scan_task_id,name,value)
+        select  #{scanTaskId, jdbcType=OTHER, typeHandler=com.xcal.api.config.UUIDTypeHandler}::uuid,'criticality.'||(case when criticality <=3 then 'LOW'
+                when criticality<=6 then 'MEDIUM'
+                else 'HIGH' end) ,count(*) as issues  from issue_group igv
+        where igv.project_id =#{projectId, jdbcType=OTHER, typeHandler=com.xcal.api.config.UUIDTypeHandler}::uuid
+        and igv.scan_task_id=#{scanTaskId, jdbcType=OTHER, typeHandler=com.xcal.api.config.UUIDTypeHandler}::uuid
+        and igv.dsr!='F'
+        group by  (case when criticality <=3 then 'LOW'
+                when criticality<=6 then 'MEDIUM'
+                else 'HIGH' end);
+
+        insert into scan_task_summary (scan_task_id,name,value)
+        select  #{scanTaskId, jdbcType=OTHER, typeHandler=com.xcal.api.config.UUIDTypeHandler}::uuid,'criticality' ,
+        (case when avg(criticality) <=3 then 'LOW'
+                when avg(criticality)<=6 then 'MEDIUM'
+                else 'HIGH' end)
+        from issue_group igv
+        where igv.project_id =#{projectId, jdbcType=OTHER, typeHandler=com.xcal.api.config.UUIDTypeHandler}::uuid
+        and igv.scan_task_id=#{scanTaskId, jdbcType=OTHER, typeHandler=com.xcal.api.config.UUIDTypeHandler}::uuid
+        and igv.dsr!='F';
+
+
+        ]]>
+    </insert>
+
+</mapper>

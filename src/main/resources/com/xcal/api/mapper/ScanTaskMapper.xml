@@ -1,0 +1,338 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!--
+  ~ Copyright (C) 2019-2022 Xcalibyte (Shenzhen) Limited.
+  ~ Licensed under the Apache License, Version 2.0 (the "License");
+  ~ you may not use this file except in compliance with the License.
+  ~ You may obtain a copy of the License at
+  ~ http://www.apache.org/licenses/LICENSE-2.0
+  ~ Unless required by applicable law or agreed to in writing, software
+  ~ distributed under the License is distributed on an "AS IS" BASIS,
+  ~ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+  ~ See the License for the specific language governing permissions and
+  ~ limitations under the License.
+  -->
+
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.xcal.api.mapper.ScanTaskMapper">
+
+    <resultMap id="scanTask" type="com.xcal.api.entity.v3.ScanTask">
+        <result property="id" column="id" jdbcType="OTHER"
+                typeHandler="com.xcal.api.config.UUIDTypeHandler"/>
+        <result property="projectId" column="project_id" jdbcType="OTHER"
+                typeHandler="com.xcal.api.config.UUIDTypeHandler"/>
+        <result property="projectConfigId" column="project_config_id" jdbcType="OTHER"
+                typeHandler="com.xcal.api.config.UUIDTypeHandler"/>
+        <result property="status" column="status" jdbcType="VARCHAR"/>
+
+        <result property="engine" column="engine" jdbcType="VARCHAR"/>
+        <result property="engineVersion" column="engine_version" jdbcType="VARCHAR"/>
+        <result property="scanMode" column="scan_mode" jdbcType="VARCHAR"/>
+
+        <result property="sourceRoot" column="source_root" jdbcType="VARCHAR"/>
+        <result property="scanParameters" column="scan_parameters" jdbcType="VARCHAR"/>
+        <result property="scanRemarks" column="scan_remarks" jdbcType="VARCHAR"/>
+
+        <result property="scanStartAt" column="scan_start_at" jdbcType="TIMESTAMP"/>
+        <result property="scanEndAt" column="scan_end_at" jdbcType="TIMESTAMP"/>
+
+        <result property="houseKeepOn" column="house_keep_on" jdbcType="TIMESTAMP"/>
+        <result property="createdBy" column="created_by" jdbcType="VARCHAR"/>
+        <result property="createdOn" column="created_on" jdbcType="TIMESTAMP"/>
+        <result property="modifiedBy" column="modified_by" jdbcType="VARCHAR"/>
+        <result property="modifiedOn" column="modified_on" jdbcType="TIMESTAMP"/>
+
+    </resultMap>
+
+    <resultMap id="scanTaskLog" type="com.xcal.api.entity.v3.ScanTaskLog">
+        <result property="scanTaskId" column="id" jdbcType="OTHER"
+                typeHandler="com.xcal.api.config.UUIDTypeHandler"/>
+        <result property="scanStartAt" column="scan_start_at" jdbcType="TIMESTAMP"/>
+        <result property="scanEndAt" column="scan_end_at" jdbcType="TIMESTAMP"/>
+        <result property="status" column="status" jdbcType="VARCHAR"/>
+        <result property="commitId" column="commit_id" jdbcType="VARCHAR"/>
+        <result property="baselineCommitId" column="baseline_commit_id" jdbcType="VARCHAR"/>
+        <result property="repoAction" column="repo_action" jdbcType="VARCHAR"/>
+        <result property="newCount" column="new_count" jdbcType="INTEGER"/>
+        <result property="fixedCount" column="fixed_count" jdbcType="INTEGER"/>
+        <result property="buildInfo" column="build_info" jdbcType="VARCHAR"/>
+    </resultMap>
+
+    <resultMap id="scanTaskIdResponse" type="com.xcal.api.model.payload.v3.ScanTaskIdResponse">
+        <result property="scanTaskId" column="id" jdbcType="OTHER"
+                typeHandler="com.xcal.api.config.UUIDTypeHandler"/>
+        <result property="status" column="status" jdbcType="VARCHAR"/>
+        <result property="scanStartAt" column="scan_start_at" jdbcType="TIMESTAMP"/>
+        <result property="scanEndAt" column="scan_end_at" jdbcType="TIMESTAMP"/>
+    </resultMap>
+
+    <select id="searchScanTaskLog" resultMap="scanTaskLog">
+        select st.id ,st.scan_start_at , st.scan_end_at , st.status, commitIdPca.value as commit_id,
+        baselineCommitIdPca.value as baseline_commit_id,
+        repoActionPca.value as repo_action,
+        buildInfoPca.value as build_info,
+        coalesce(oc.count,0) as new_count,
+        coalesce(fc.count,0) as fixed_count
+        from scan_task st
+        left join project_config_attribute repoActionPca on st.project_config_id = repoActionPca.project_config_id and
+        repoActionPca.name='repoAction'
+        left join project_config_attribute commitIdPca on st.project_config_id = commitIdPca.project_config_id and
+        commitIdPca.name='commitId'
+        left join project_config_attribute baselineCommitIdPca on st.project_config_id
+        =baselineCommitIdPca.project_config_id and baselineCommitIdPca.name='baselineCommitId'
+        left join project_config_attribute buildInfoPca on st.project_config_id = buildInfoPca.project_config_id and
+        buildInfoPca.name='buildInfo'
+
+        left join (select scan_task_id, count(*) from issue_group ig
+        where project_id = #{projectId, jdbcType=OTHER, typeHandler=com.xcal.api.config.UUIDTypeHandler}::uuid
+        and dsr='N'
+        <if test="ruleSets != null">
+            and ig.rule_set in
+            <foreach collection="ruleSets" open="(" close=")" separator=", " item="item">
+                #{item}
+            </foreach>
+        </if>
+        group by scan_task_id ) oc on st.id=oc.scan_task_id
+
+        left join (select scan_task_id, count(*) from issue_group ig
+        where project_id = #{projectId, jdbcType=OTHER, typeHandler=com.xcal.api.config.UUIDTypeHandler}::uuid
+        and ( dsr='F' )
+        <if test="ruleSets != null">
+            and ig.rule_set in
+            <foreach collection="ruleSets" open="(" close=")" separator=", " item="item">
+                #{item}
+            </foreach>
+        </if>
+        group by scan_task_id ) fc on st.id=fc.scan_task_id
+
+        where project_id = #{projectId, jdbcType=OTHER, typeHandler=com.xcal.api.config.UUIDTypeHandler}::uuid
+        and status='COMPLETED'
+
+        <if test="targetRangeStartDate!=null and targetRangeEndDate!=null">
+            and st.scan_end_at &lt;= #{targetRangeEndDate,jdbcType=TIMESTAMP}::timestamp
+            and st.scan_end_at >= #{targetRangeStartDate,jdbcType=TIMESTAMP}::timestamp
+        </if>
+
+        <if test="commitIdPattern!=null">
+            and (
+            commitIdPca.value like CONCAT('%',#{commitIdPattern},'%')
+            or baselineCommitIdPca.value like CONCAT('%',#{commitIdPattern},'%')
+            )
+        </if>
+
+        <if test="repoActions != null">
+            and repoActionPca.value in
+            <foreach collection="repoActions" open="(" close=")" separator=", " item="action">
+                #{action}
+            </foreach>
+        </if>
+
+        order by created_on desc
+        offset #{offset} limit #{limit}
+    </select>
+
+    <select id="getScanTaskLogCount" resultType="java.lang.Long">
+        select count(1)
+        from scan_task st
+        left join project_config_attribute repoActionPca on st.project_config_id = repoActionPca.project_config_id and
+        repoActionPca.name='repoAction'
+        left join project_config_attribute commitIdPca on st.project_config_id =commitIdPca.project_config_id and
+        commitIdPca.name='commitId'
+        left join project_config_attribute baselineCommitIdPca on st.project_config_id
+        =baselineCommitIdPca.project_config_id and baselineCommitIdPca.name='baselineCommitId'
+
+        left join (select scan_task_id, count(*) from issue_group ig
+        where project_id = #{projectId, jdbcType=OTHER, typeHandler=com.xcal.api.config.UUIDTypeHandler}::uuid
+        and dsr='N'
+        <if test="ruleSets != null">
+            and ig.rule_set in
+            <foreach collection="ruleSets" open="(" close=")" separator=", " item="item">
+                #{item}
+            </foreach>
+        </if>
+        group by scan_task_id ) oc on st.id=oc.scan_task_id
+
+        left join (select scan_task_id, count(*) from issue_group ig
+        where project_id = #{projectId, jdbcType=OTHER, typeHandler=com.xcal.api.config.UUIDTypeHandler}::uuid
+        and ( dsr='F' )
+        <if test="ruleSets != null">
+            and ig.rule_set in
+            <foreach collection="ruleSets" open="(" close=")" separator=", " item="item">
+                #{item}
+            </foreach>
+        </if>
+        group by scan_task_id ) fc on st.id=fc.scan_task_id
+
+        where project_id = #{projectId, jdbcType=OTHER, typeHandler=com.xcal.api.config.UUIDTypeHandler}::uuid
+        and status='COMPLETED'
+        <if test="targetRangeStartDate!=null and targetRangeEndDate!=null">
+            and st.scan_end_at &lt;= #{targetRangeEndDate,jdbcType=TIMESTAMP}::timestamp
+            and st.scan_end_at >= #{targetRangeStartDate,jdbcType=TIMESTAMP}::timestamp
+        </if>
+
+        <if test="commitIdPattern!=null">
+            and (
+            commitIdPca.value like CONCAT('%',#{commitIdPattern},'%')
+            or baselineCommitIdPca.value like CONCAT('%',#{commitIdPattern},'%')
+            )
+        </if>
+
+        <if test="repoActions != null">
+            and repoActionPca.value in
+            <foreach collection="repoActions" open="(" close=")" separator=", " item="action">
+                #{action}
+            </foreach>
+        </if>
+
+    </select>
+
+
+    <select id="getScanTaskIdResponse" resultMap="scanTaskIdResponse">
+        select st.id as id,st.status as status , st.scan_start_at as scan_start_at , st.scan_end_at as scan_end_at
+        from scan_task st
+        inner join project_config_attribute pca on st.project_config_id =pca.project_config_id and pca.name='commitId'
+        where st.project_id =#{projectId, jdbcType=OTHER, typeHandler=com.xcal.api.config.UUIDTypeHandler}::uuid and
+        pca.value = #{commitId}
+        order by st.created_on desc
+        limit 1
+    </select>
+
+    <select id="getScanTaskById" resultMap="scanTask">
+        select
+        st.id,
+        st.project_id ,
+        st.project_config_id ,
+        st.status ,
+        st.engine ,
+        st.engine_version ,
+        st.scan_mode ,
+        st.source_root ,
+        st.scan_parameters ,
+        st.scan_remarks ,
+        st.scan_start_at ,
+        st.scan_end_at ,
+        st.created_by ,
+        st.house_keep_on ,
+        st.created_on ,
+        st.modified_by ,
+        st.modified_on
+        from
+        scan_task st
+        where st.id = #{scanTaskId}
+    </select>
+
+    <select id="getLastScanTaskByProjectId" resultMap="scanTask">
+        select
+        st.id,
+        st.project_id ,
+        st.project_config_id ,
+        st.status ,
+        st.engine ,
+        st.engine_version ,
+        st.scan_mode ,
+        st.source_root ,
+        st.scan_parameters ,
+        st.scan_remarks ,
+        st.scan_start_at ,
+        st.scan_end_at ,
+        st.created_by ,
+        st.house_keep_on ,
+        st.created_on ,
+        st.modified_by ,
+        st.modified_on
+        from
+        scan_task st
+        where project_id= #{projectId}
+        <if test="status!=null">
+            and status=#{status}
+        </if>
+        order by created_on desc
+        limit 1
+    </select>
+
+    <select id="getLastScanTaskByScanTask" resultMap="scanTask">
+        select
+        st.id,
+        st.project_id ,
+        st.project_config_id ,
+        st.status ,
+        st.engine ,
+        st.engine_version ,
+        st.scan_mode ,
+        st.source_root ,
+        st.scan_parameters ,
+        st.scan_remarks ,
+        st.scan_start_at ,
+        st.scan_end_at ,
+        st.created_by ,
+        st.house_keep_on ,
+        st.created_on ,
+        st.modified_by ,
+        st.modified_on
+        from scan_task st
+        where st.created_on &lt; (select created_on from scan_task st2 where st2.id= #{scanTaskId} and st2.project_id =
+        #{projectId} )
+        and st.project_id = #{projectId}
+        <if test="status !=null ">
+            and status= #{status}
+        </if>
+        order by st.created_on desc
+        limit 1
+    </select>
+
+    <select id="getFirstScanTaskWithBaseline" resultMap="scanTask">
+        select
+        st.id,
+        st.project_id ,
+        st.project_config_id ,
+        st.status ,
+        st.engine ,
+        st.engine_version ,
+        st.scan_mode ,
+        st.source_root ,
+        st.scan_parameters ,
+        st.scan_remarks ,
+        st.scan_start_at ,
+        st.scan_end_at ,
+        st.created_by ,
+        st.house_keep_on ,
+        st.created_on ,
+        st.modified_by ,
+        st.modified_on,
+        baselineCommitIdPca.value
+        from scan_task st
+        left join project_config_attribute baselineCommitIdPca on
+        st.project_config_id = baselineCommitIdPca.project_config_id
+        and baselineCommitIdPca.name = 'baselineCommitId'
+        where
+        st.project_id = #{projectId}
+        and baselineCommitIdPca is not null
+        order by st.created_on asc
+        limit 1
+    </select>
+
+    <select id="getScanTaskIdFromProjectAndCommitId" resultType="String">
+        select st.id from scan_task st
+        left join project_config_attribute pca on st.project_config_id =pca.project_config_id  and pca."name" ='commitId'
+        where
+        st.project_id = #{projectId}
+        and st.status = #{status}
+        and pca.value = #{commitId}
+        order by st.created_on desc
+        limit 1
+    </select>
+
+    <select id="getCommitIdByScanTaskId" resultType="String">
+        select commitid_pca.value
+        from scan_task st
+        left join project_config_attribute commitid_pca on st.project_config_id =commitid_pca.project_config_id  and commitid_pca."name" ='commitId'
+        left join project_config_attribute baseline_commit_id_pca on st.project_config_id =baseline_commit_id_pca.project_config_id  and baseline_commit_id_pca."name" ='baselineCommitId'
+        where
+            (commitid_pca is not null or
+            baseline_commit_id_pca is not null) and
+        st.id = #{scanTaskId}
+        order by st.created_on desc
+        limit 1;
+    </select>
+</mapper>

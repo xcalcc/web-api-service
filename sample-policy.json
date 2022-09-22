@@ -1,0 +1,19 @@
+{
+  "import":{
+    "EA_RETRY":{
+      "E_ACTION": "EA_RETRY",
+      "E_CATEGORY": "EC_IERR",
+      "retryForRecoverable":5,
+      "retryForUnexpectedIssue":3,
+      "retryInterval":60000
+    },
+    "EA_EXIT": {
+      "E_ACTION": "EA_EXIT",
+      "E_CATEGORY": "EC_IERR"
+    },
+    "ET_UNEXPECTED": {
+      "E_ACTION": "ET_UNEXPECTED",
+      "E_CATEGORY": "EC_IERR"
+    }
+  }
+}

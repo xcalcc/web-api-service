@@ -1,0 +1,338 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!--
+  ~ Copyright (C) 2019-2022 Xcalibyte (Shenzhen) Limited.
+  ~ Licensed under the Apache License, Version 2.0 (the "License");
+  ~ you may not use this file except in compliance with the License.
+  ~ You may obtain a copy of the License at
+  ~ http://www.apache.org/licenses/LICENSE-2.0
+  ~ Unless required by applicable law or agreed to in writing, software
+  ~ distributed under the License is distributed on an "AS IS" BASIS,
+  ~ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+  ~ See the License for the specific language governing permissions and
+  ~ limitations under the License.
+  -->
+
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.xcal.api.mapper.UserMapper">
+
+    <resultMap id="userCount" type="com.xcal.api.model.dto.UserCountDto">
+        <id column="leave_type_id"/> <!-- required for result with association -->
+        <result property="count" column="count" jdbcType="INTEGER"/>
+        <association property="user" resultMap="user"/>
+    </resultMap>
+
+    <resultMap id="user" type="com.xcal.api.model.dto.UserDto">
+        <result property="id" column="id" jdbcType="OTHER"
+                typeHandler="com.xcal.api.config.UUIDTypeHandler"/>
+        <result property="username" column="username" jdbcType="VARCHAR"/>
+        <result property="displayName" column="display_name" jdbcType="VARCHAR"/>
+        <result property="email" column="email" jdbcType="VARCHAR"/>
+    </resultMap>
+
+    <resultMap id="assigneeCountRow" type="com.xcal.api.entity.v3.AssigneeCountRow">
+        <result property="id" column="id" jdbcType="OTHER"
+                typeHandler="com.xcal.api.config.UUIDTypeHandler"/>
+        <result property="username" column="username" jdbcType="VARCHAR"/>
+        <result property="displayName" column="display_name" jdbcType="VARCHAR"/>
+        <result property="email" column="email" jdbcType="VARCHAR"/>
+        <result property="criticality" column="criticality_level" jdbcType="VARCHAR"/>
+        <result property="ruleCode" column="rule_code" jdbcType="VARCHAR"/>
+        <result property="count" column="count" jdbcType="INTEGER"/>
+    </resultMap>
+
+    <select id="getTopAssignees" resultMap="userCount">
+        select u.id , u.username , u.display_name , u.email, id_count.assign_count as count
+        from
+        (select t.assign_to , count(*) as assign_count
+        from "issue_group" as t
+        left join "issue_file" as f1 on f1.id = t.src_file_path_id and f1.scan_task_id = t.scan_task_id
+        left join "issue_file" as f2 on f2.id = t.sink_file_path_id and f2.scan_task_id = t.scan_task_id
+        left join "issue_string" as fs on fs.id = t.function_name_id and fs.scan_task_id = t.scan_task_id
+        left join "issue_string" as vs on vs.id = t.variable_name_id and vs.scan_task_id = t.scan_task_id
+        left join "user" as u on t.assign_to = u.id
+        left join (select rule_code, count(1) as issue_group_count from "issue_group" where project_id =
+        #{projectId, jdbcType=OTHER, typeHandler=com.xcal.api.config.UUIDTypeHandler}::uuid group by rule_code) as rc on
+        rc.rule_code = t.rule_code
+        where t.project_id = #{projectId, jdbcType=OTHER, typeHandler=com.xcal.api.config.UUIDTypeHandler}::uuid
+        <if test="ruleCodes != null and ruleCodes.size() > 0">
+            and
+            <foreach collection="ruleCodes" open="(" close=")" separator=" or " item="item">
+                <trim suffixOverrides="and">
+                    <if test="item.csvCode != null">
+                        t.rule_code = #{item.csvCode} and
+                    </if>
+                    <choose>
+                        <when test='item.criticality == "L"'>
+                            t.criticality between 1 and 3 and
+                        </when>
+                        <when test='item.criticality == "M"'>
+                            t.criticality between 4 and 6 and
+                        </when>
+                        <when test='item.criticality == "H"'>
+                            t.criticality between 7 and 9 and
+                        </when>
+                    </choose>
+                </trim>
+            </foreach>
+        </if>
+        <if test="ruleSets != null">
+            and t.rule_set in
+            <foreach collection="ruleSets" open="(" close=")" separator=", " item="item">
+                #{item}
+            </foreach>
+        </if>
+        <choose>
+            <when test='pathCategory == "H"'>
+                <if test="filePaths != null">
+                    and
+                    <foreach collection="filePaths" open="(" close=")" separator=" or " item="item">
+                        f1.path similar to '($h)?/'||#{item}||'%' or f2.path similar to '($h)?/'||#{item}||'%'
+                    </foreach>
+                    <if test="filePaths == null">
+                        and (f1.path similar to '$h/%' or f2.path similar to '$h/%')
+                    </if>
+                </if>
+            </when>
+            <when test='pathCategory == "T"'>
+                <if test="filePaths != null">
+                    and
+                    <foreach collection="filePaths" open="(" close=")" separator=" or " item="item">
+                        f1.path similar to '($t)?/'||#{item}||'%' or f2.path similar to '($t)?/'||#{item}||'%'
+                    </foreach>
+                </if>
+                <if test="filePaths == null">
+                    and (f1.path similar to '($t)?/%' or f2.path similar to '($t)?/%')
+                </if>
+            </when>
+            <otherwise>
+                <if test="filePaths != null">
+                    and
+                    <foreach collection="filePaths" open="(" close=")" separator=" or " item="item">
+                        f1.path similar to '($[ht])?/'||#{item}||'%' or f2.path similar to '($[ht])?/'||#{item}||'%'
+                    </foreach>
+                </if>
+            </otherwise>
+        </choose>
+        <if test="certainty != null">
+            and t.certainty = #{certainty}
+        </if>
+        <if test="dsrType!=null and dsrType.size()>0">
+            and (
+            <trim suffixOverrides="or">
+                <if test='dsrType.contains("F")'>
+                    (t.dsr = 'F') or
+                </if>
+                <if test='dsrType.contains("N")'>
+                    (t.dsr = 'N') or
+                </if>
+                <if test='dsrType.contains("E")'>
+                    (t.dsr = 'E') or (t.dsr = 'L') or
+                </if>
+                <!-- deprecated. P is same with L, will remove it later -->
+                <if test='dsrType.contains("P")'>
+                    (t.dsr = 'P')
+                </if>
+            </trim>
+            )
+        </if>
+        <if test="scanTaskId != null">
+            and t.scan_task_id=#{scanTaskId}
+        </if>
+        <choose>
+            <when test='criticality == "L"'>
+                and t.criticality between 1 and 3
+            </when>
+            <when test='criticality == "M"'>
+                and t.criticality between 4 and 6
+            </when>
+            <when test='criticality == "H"'>
+                and t.criticality between 7 and 9
+            </when>
+        </choose>
+        <if test="searchValues!=null and !searchValues.isEmpty()">
+            and
+            <foreach collection="searchValues" open="(" close=")" separator=" or " item="searchValue">
+                (t.id like CONCAT('%',#{searchValue},'%')
+                or f1."path" like CONCAT('%',#{searchValue},'%')
+                or f2."path" like CONCAT('%',#{searchValue},'%')
+                or fs.str like CONCAT('%',#{searchValue},'%')
+                or vs.str like CONCAT('%',#{searchValue},'%')
+                )
+            </foreach>
+        </if>
+        group by t.assign_to
+        order by count(*) desc
+        offset #{offset} limit #{limit}) as id_count
+        left join "user" u on id_count.assign_to = u.id
+        order by count desc
+    </select>
+
+    <select id="getAssigneeRuleCodeCount" resultMap="assigneeCountRow">
+        select u.id as id , u.username as username, u.display_name as display_name, u.email as email,
+        rule_code ,id_count.assign_count as count
+        from
+        (select
+        rule_code ,ig.assign_to , count(*) as assign_count
+        from issue_group ig
+        where project_id = #{projectId, jdbcType=OTHER, typeHandler=com.xcal.api.config.UUIDTypeHandler}::uuid
+        <choose>
+            <when test="assigned==true">
+                and assign_to is not null
+            </when>
+            <otherwise>
+                and assign_to is null
+            </otherwise>
+        </choose>
+        group by ig.rule_code ,ig.assign_to
+        ) as id_count
+        left join "user" u on id_count.assign_to = u.id
+    </select>
+
+    <select id="getAssigneeCriticalityRuleCodeCount" resultMap="assigneeCountRow">
+        select u.id as id , u.username as username , u.display_name as display_name , u.email as email,
+        criticality_level
+        , rule_code as rule_code,id_count.assign_count as count
+        from
+        (select
+            case
+                when criticality is null then 'LOW'
+                when criticality between 1 and 3 then 'LOW'
+                when criticality between 4 and 6 then 'MEDIUM'
+                else 'HIGH'
+                end as criticality_level,
+            t.rule_code ,
+            t.assign_to ,
+            count(*) as assign_count
+        from "issue_group" as t
+        left join "issue_file" as f1 on f1.id = t.src_file_path_id and f1.scan_task_id = t.scan_task_id
+        left join "issue_file" as f2 on f2.id = t.sink_file_path_id and f2.scan_task_id = t.scan_task_id
+        left join "issue_string" as fs on fs.id = t.function_name_id and fs.scan_task_id = t.scan_task_id
+        left join "issue_string" as vs on vs.id = t.variable_name_id and vs.scan_task_id = t.scan_task_id
+        left join "user" as u on t.assign_to = u.id
+        left join (select rule_code, count(1) as issue_group_count from "issue_group" where project_id =
+        #{projectId, jdbcType=OTHER, typeHandler=com.xcal.api.config.UUIDTypeHandler}::uuid group by rule_code) as rc on
+        rc.rule_code = t.rule_code
+        where t.project_id = #{projectId, jdbcType=OTHER, typeHandler=com.xcal.api.config.UUIDTypeHandler}::uuid
+        <if test="ruleCodes != null and ruleCodes.size() > 0">
+            and
+            <foreach collection="ruleCodes" open="(" close=")" separator=" or " item="item">
+                <trim suffixOverrides="and">
+                    <if test="item.csvCode != null">
+                        t.rule_code = #{item.csvCode} and
+                    </if>
+                    <choose>
+                        <when test='item.criticality == "L"'>
+                            t.criticality between 1 and 3 and
+                        </when>
+                        <when test='item.criticality == "M"'>
+                            t.criticality between 4 and 6 and
+                        </when>
+                        <when test='item.criticality == "H"'>
+                            t.criticality between 7 and 9 and
+                        </when>
+                    </choose>
+                </trim>
+            </foreach>
+        </if>
+        <if test="ruleSets != null">
+            and t.rule_set in
+            <foreach collection="ruleSets" open="(" close=")" separator=", " item="item">
+                #{item}
+            </foreach>
+        </if>
+        <choose>
+            <when test='pathCategory == "H"'>
+                <if test="filePaths != null">
+                    and
+                    <foreach collection="filePaths" open="(" close=")" separator=" or " item="item">
+                        f1.path similar to '($h)?/'||#{item}||'%' or f2.path similar to '($h)?/'||#{item}||'%'
+                    </foreach>
+                    <if test="filePaths == null">
+                        and (f1.path similar to '$h/%' or f2.path similar to '$h/%')
+                    </if>
+                </if>
+            </when>
+            <when test='pathCategory == "T"'>
+                <if test="filePaths != null">
+                    and
+                    <foreach collection="filePaths" open="(" close=")" separator=" or " item="item">
+                        f1.path similar to '($t)?/'||#{item}||'%' or f2.path similar to '($t)?/'||#{item}||'%'
+                    </foreach>
+                </if>
+                <if test="filePaths == null">
+                    and (f1.path similar to '($t)?/%' or f2.path similar to '($t)?/%')
+                </if>
+            </when>
+            <otherwise>
+                <if test="filePaths != null">
+                    and
+                    <foreach collection="filePaths" open="(" close=")" separator=" or " item="item">
+                        f1.path similar to '($[ht])?/'||#{item}||'%' or f2.path similar to '($[ht])?/'||#{item}||'%'
+                    </foreach>
+                </if>
+            </otherwise>
+        </choose>
+        <if test="certainty != null">
+            and t.certainty = #{certainty}
+        </if>
+        <if test="dsrType!=null and dsrType.size()>0">
+            and (
+            <trim suffixOverrides="or">
+                <if test='dsrType.contains("F")'>
+                    (t.dsr = 'F') or
+                </if>
+                <if test='dsrType.contains("N")'>
+                    (t.dsr = 'N') or
+                </if>
+                <if test='dsrType.contains("E")'>
+                    (t.dsr = 'E') or (t.dsr = 'L') or
+                </if>
+                <!-- deprecated. P is same with L, will remove it later -->
+                <if test='dsrType.contains("P")'>
+                    (t.dsr = 'P')
+                </if>
+            </trim>
+            )
+        </if>
+        <if test="scanTaskId != null">
+            and t.scan_task_id=#{scanTaskId}
+        </if>
+        <choose>
+            <when test='criticality == "L"'>
+                and t.criticality between 1 and 3
+            </when>
+            <when test='criticality == "M"'>
+                and t.criticality between 4 and 6
+            </when>
+            <when test='criticality == "H"'>
+                and t.criticality between 7 and 9
+            </when>
+        </choose>
+        <if test="searchValues!=null and !searchValues.isEmpty()">
+            and
+            <foreach collection="searchValues" open="(" close=")" separator=" or " item="searchValue">
+                (t.id like CONCAT('%',#{searchValue},'%')
+                or f1."path" like CONCAT('%',#{searchValue},'%')
+                or f2."path" like CONCAT('%',#{searchValue},'%')
+                or fs.str like CONCAT('%',#{searchValue},'%')
+                or vs.str like CONCAT('%',#{searchValue},'%')
+                )
+            </foreach>
+        </if>
+        <choose>
+            <when test="assigned==true">
+                and assign_to is not null
+            </when>
+            <otherwise>
+                and assign_to is null
+            </otherwise>
+        </choose>
+        group by criticality_level, t.rule_code ,t.assign_to
+        ) as id_count
+        left join "user" u on id_count.assign_to = u.id
+    </select>
+
+
+</mapper>

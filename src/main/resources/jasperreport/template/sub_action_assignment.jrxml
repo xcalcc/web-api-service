@@ -1,0 +1,66 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  ~ Copyright (C) 2019-2022 Xcalibyte (Shenzhen) Limited.
+  ~ Licensed under the Apache License, Version 2.0 (the "License");
+  ~ you may not use this file except in compliance with the License.
+  ~ You may obtain a copy of the License at
+  ~ http://www.apache.org/licenses/LICENSE-2.0
+  ~ Unless required by applicable law or agreed to in writing, software
+  ~ distributed under the License is distributed on an "AS IS" BASIS,
+  ~ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+  ~ See the License for the specific language governing permissions and
+  ~ limitations under the License.
+  -->
+
+<!-- Created with Jaspersoft Studio version 6.8.0.final using JasperReports Library version 6.8.0-2ed8dfabb690ff337a5797129f2cd92902b0c87b  -->
+<jasperReport xmlns="http://jasperreports.sourceforge.net/jasperreports" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://jasperreports.sourceforge.net/jasperreports http://jasperreports.sourceforge.net/xsd/jasperreport.xsd" name="sub_action_assignment" columnCount="2" printOrder="Horizontal" pageWidth="180" pageHeight="75" whenNoDataType="NoDataSection" columnWidth="90" leftMargin="0" rightMargin="0" topMargin="0" bottomMargin="0" uuid="d4c49da0-8dcb-479e-8e07-ca559ceac2d3">
+	<property name="com.jaspersoft.studio.data.sql.tables" value=""/>
+	<style name="default" isDefault="true" vTextAlign="Middle" fontName="SansSerif"/>
+	<parameter name="SCAN_ID" class="java.lang.String">
+		<defaultValueExpression><![CDATA[$P{REPORT_PARAMETERS_MAP}.getOrDefault( "SCAN_ID", null )]]></defaultValueExpression>
+	</parameter>
+	<parameter name="RULE_SET_ID" class="java.lang.String">
+		<defaultValueExpression><![CDATA[$P{REPORT_PARAMETERS_MAP}.getOrDefault( "RULE_SET_ID", null )]]></defaultValueExpression>
+	</parameter>
+	<queryString language="SQL">
+		<![CDATA[select u.display_name, count(distinct i.id) issue_count
+from issue_v2 i
+         inner join "user" u on i.assign_to = u.id
+         inner join rule_information ri on i.rule_information_id = ri.id
+         inner join rule_set rs on ri.rule_set_id = rs.id
+where i.scan_task_id::text = $P{SCAN_ID}
+  and rs.id::text = $P{RULE_SET_ID}
+group by u.id, u.display_name
+order by issue_count desc]]>
+	</queryString>
+	<field name="display_name" class="java.lang.String">
+		<property name="com.jaspersoft.studio.field.label" value="display_name"/>
+		<property name="com.jaspersoft.studio.field.tree.path" value="user"/>
+	</field>
+	<field name="issue_count" class="java.lang.Long">
+		<property name="com.jaspersoft.studio.field.label" value="issue_count"/>
+	</field>
+	<detail>
+		<band height="15" splitType="Stretch">
+			<textField>
+				<reportElement x="0" y="0" width="60" height="15" uuid="f850c809-b98e-4f2c-a9b1-66adb203004e"/>
+				<textElement>
+					<font size="8" isBold="true"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{display_name}]]></textFieldExpression>
+			</textField>
+			<textField pattern="#,##0.###;(#,##0.###-)">
+				<reportElement x="60" y="0" width="30" height="15" uuid="14ce04b5-197e-4b01-b362-d7a897939102"/>
+				<textElement>
+					<font size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{issue_count}]]></textFieldExpression>
+			</textField>
+		</band>
+	</detail>
+	<noData>
+		<band height="15">
+			<property name="com.jaspersoft.studio.unit.height" value="px"/>
+		</band>
+	</noData>
+</jasperReport>

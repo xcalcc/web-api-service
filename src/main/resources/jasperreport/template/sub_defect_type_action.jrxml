@@ -1,0 +1,266 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  ~ Copyright (C) 2019-2022 Xcalibyte (Shenzhen) Limited.
+  ~ Licensed under the Apache License, Version 2.0 (the "License");
+  ~ you may not use this file except in compliance with the License.
+  ~ You may obtain a copy of the License at
+  ~ http://www.apache.org/licenses/LICENSE-2.0
+  ~ Unless required by applicable law or agreed to in writing, software
+  ~ distributed under the License is distributed on an "AS IS" BASIS,
+  ~ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+  ~ See the License for the specific language governing permissions and
+  ~ limitations under the License.
+  -->
+
+<!-- Created with Jaspersoft Studio version 6.8.0.final using JasperReports Library version 6.8.0-2ed8dfabb690ff337a5797129f2cd92902b0c87b  -->
+<jasperReport xmlns="http://jasperreports.sourceforge.net/jasperreports" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://jasperreports.sourceforge.net/jasperreports http://jasperreports.sourceforge.net/xsd/jasperreport.xsd" name="sub_defect_type_action" pageWidth="485" pageHeight="400" whenNoDataType="NoDataSection" columnWidth="485" leftMargin="0" rightMargin="0" topMargin="0" bottomMargin="0" uuid="d4c49da0-8dcb-479e-8e07-ca559ceac2d3">
+	<style name="default" isDefault="true" vTextAlign="Middle" fontName="SansSerif"/>
+	<parameter name="SCAN_ID" class="java.lang.String">
+		<defaultValueExpression><![CDATA[$P{REPORT_PARAMETERS_MAP}.getOrDefault( "SCAN_ID", null )]]></defaultValueExpression>
+	</parameter>
+	<parameter name="RULE_SET_ID" class="java.lang.String">
+		<defaultValueExpression><![CDATA[$P{REPORT_PARAMETERS_MAP}.getOrDefault( "RULE_SET_ID", null )]]></defaultValueExpression>
+	</parameter>
+	<queryString language="SQL">
+		<![CDATA[select ri.vulnerable, count(distinct i.id) issue_count,
+       SUM(CASE WHEN i.assign_to is not null THEN 1 ELSE 0 END) assigned,
+       SUM(CASE WHEN i.assign_to is null THEN 1 ELSE 0 END) unassigned,
+       SUM(CASE WHEN i.action ='CRITICAL' THEN 1 ELSE 0 END) critical,
+       SUM(CASE WHEN i.action ='CONFIRMED' THEN 1 ELSE 0 END) confirmed,
+       SUM(CASE WHEN i.action ='FALSE_POSITIVE' THEN 1 ELSE 0 END) false_positive,
+       SUM(CASE WHEN i.action ='WAIVED' THEN 1 ELSE 0 END) waived,
+       SUM(CASE WHEN i.action ='PENDING' THEN 1 ELSE 0 END) pending
+from issue_v2 i
+         left join rule_information ri on i.rule_information_id = ri.id
+         left join rule_set rs on (rs.id = ri.rule_set_id)
+where i.scan_task_id::text = $P{SCAN_ID}
+  and rs.id::text = $P{RULE_SET_ID}
+group by ri.vulnerable
+order by issue_count desc]]>
+	</queryString>
+	<field name="vulnerable" class="java.lang.String">
+		<property name="com.jaspersoft.studio.field.label" value="vulnerable"/>
+		<property name="com.jaspersoft.studio.field.tree.path" value="rule_information"/>
+	</field>
+	<field name="issue_count" class="java.lang.Long">
+		<property name="com.jaspersoft.studio.field.label" value="issue_count"/>
+	</field>
+	<field name="assigned" class="java.lang.Long">
+		<property name="com.jaspersoft.studio.field.label" value="assigned"/>
+	</field>
+	<field name="unassigned" class="java.lang.Long">
+		<property name="com.jaspersoft.studio.field.label" value="unassigned"/>
+	</field>
+	<field name="critical" class="java.lang.Long">
+		<property name="com.jaspersoft.studio.field.label" value="critical"/>
+	</field>
+	<field name="confirmed" class="java.lang.Long">
+		<property name="com.jaspersoft.studio.field.label" value="confirmed"/>
+	</field>
+	<field name="false_positive" class="java.lang.Long">
+		<property name="com.jaspersoft.studio.field.label" value="false_positive"/>
+	</field>
+	<field name="waived" class="java.lang.Long">
+		<property name="com.jaspersoft.studio.field.label" value="waived"/>
+	</field>
+	<field name="pending" class="java.lang.Long">
+		<property name="com.jaspersoft.studio.field.label" value="pending"/>
+	</field>
+	<columnHeader>
+		<band height="35">
+			<textField>
+				<reportElement x="0" y="0" width="315" height="20" uuid="1cbf7cf8-b2e5-4844-9a4b-42e61fa8831f"/>
+				<textElement>
+					<font isBold="true"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$R{header.top_10_defect_summary}]]></textFieldExpression>
+			</textField>
+			<frame>
+				<reportElement x="0" y="20" width="485" height="15" uuid="e7db9cb8-910a-4eb9-a204-55727df9bff5"/>
+				<box>
+					<bottomPen lineWidth="0.25" lineColor="#818486"/>
+				</box>
+				<textField>
+					<reportElement x="77" y="0" width="51" height="15" uuid="0d5cbf03-3572-4065-a4b2-a54ac2c22f73"/>
+					<textElement textAlignment="Center" verticalAlignment="Bottom">
+						<font size="8" isBold="true"/>
+					</textElement>
+					<textFieldExpression><![CDATA[$R{title.total}]]></textFieldExpression>
+				</textField>
+				<textField>
+					<reportElement x="230" y="0" width="51" height="15" forecolor="#E5001C" uuid="9f6b90d7-742c-46f6-84ee-78a32ed4afb3"/>
+					<textElement textAlignment="Center" verticalAlignment="Bottom">
+						<font size="8" isBold="true"/>
+					</textElement>
+					<textFieldExpression><![CDATA[$R{title.action.critical}]]></textFieldExpression>
+				</textField>
+				<textField>
+					<reportElement x="128" y="0" width="51" height="15" uuid="6c68edeb-f384-4985-a040-f6c9df4c980f"/>
+					<textElement textAlignment="Center" verticalAlignment="Bottom">
+						<font size="8" isBold="true"/>
+					</textElement>
+					<textFieldExpression><![CDATA[$R{title.assigned}]]></textFieldExpression>
+				</textField>
+				<textField>
+					<reportElement x="281" y="0" width="51" height="15" forecolor="#F06E1A" uuid="eb7a747d-a55b-4ee8-8781-cd4713bc6714"/>
+					<textElement textAlignment="Center" verticalAlignment="Bottom">
+						<font size="8" isBold="true"/>
+					</textElement>
+					<textFieldExpression><![CDATA[$R{title.action.confirmed}]]></textFieldExpression>
+				</textField>
+				<textField>
+					<reportElement x="332" y="0" width="51" height="15" forecolor="#00AEE6" uuid="e67a2d62-26d0-489e-94b3-c2f7b7a8067d"/>
+					<textElement textAlignment="Center" verticalAlignment="Bottom">
+						<font size="8" isBold="true"/>
+					</textElement>
+					<textFieldExpression><![CDATA[$R{title.action.false_positive}]]></textFieldExpression>
+				</textField>
+				<textField>
+					<reportElement x="179" y="0" width="51" height="15" uuid="1a1ef462-c1c6-4b5c-8b02-4bb2fea259b6"/>
+					<textElement textAlignment="Center" verticalAlignment="Bottom">
+						<font size="8" isBold="true"/>
+					</textElement>
+					<textFieldExpression><![CDATA[$R{title.unassigned}]]></textFieldExpression>
+				</textField>
+				<textField>
+					<reportElement x="383" y="0" width="51" height="15" forecolor="#818486" uuid="dc3be4ee-f4b1-427f-9680-d499617c9849"/>
+					<textElement textAlignment="Center" verticalAlignment="Bottom">
+						<font size="8" isBold="true"/>
+					</textElement>
+					<textFieldExpression><![CDATA[$R{title.action.waived}]]></textFieldExpression>
+				</textField>
+				<textField>
+					<reportElement x="434" y="0" width="51" height="15" forecolor="#BABCBE" uuid="c804a5a6-abf5-4f1a-80af-bc408f01a316"/>
+					<textElement textAlignment="Center" verticalAlignment="Bottom">
+						<font size="8" isBold="true"/>
+					</textElement>
+					<textFieldExpression><![CDATA[$R{title.action.pending}]]></textFieldExpression>
+				</textField>
+			</frame>
+		</band>
+	</columnHeader>
+	<detail>
+		<band height="15" splitType="Stretch">
+			<textField>
+				<reportElement x="0" y="0" width="77" height="15" uuid="f850c809-b98e-4f2c-a9b1-66adb203004e"/>
+				<box>
+					<bottomPen lineWidth="0.25" lineColor="#818486"/>
+					<rightPen lineWidth="0.25" lineColor="#818486"/>
+				</box>
+				<textElement>
+					<font size="8" isBold="true"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{vulnerable}]]></textFieldExpression>
+			</textField>
+			<textField pattern="#,##0.###;(#,##0.###-)">
+				<reportElement x="77" y="0" width="51" height="15" forecolor="#000000" uuid="14ce04b5-197e-4b01-b362-d7a897939102"/>
+				<box>
+					<pen lineWidth="0.0" lineColor="#818486"/>
+					<leftPen lineWidth="0.25" lineColor="#818486"/>
+					<bottomPen lineWidth="0.25" lineColor="#818486"/>
+					<rightPen lineWidth="0.0" lineColor="#818486"/>
+				</box>
+				<textElement textAlignment="Center">
+					<font size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{issue_count}]]></textFieldExpression>
+			</textField>
+			<textField pattern="#,##0.###;(#,##0.###-)">
+				<reportElement x="128" y="0" width="51" height="15" forecolor="#000000" backcolor="#FFFFFF" uuid="3e82d9b3-a352-4575-b4a9-78242e8c7eeb"/>
+				<box>
+					<pen lineWidth="0.0" lineColor="#818486"/>
+					<leftPen lineWidth="0.25" lineColor="#818486"/>
+					<bottomPen lineWidth="0.25" lineColor="#818486"/>
+					<rightPen lineWidth="0.0" lineColor="#818486"/>
+				</box>
+				<textElement textAlignment="Center">
+					<font size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{assigned}]]></textFieldExpression>
+			</textField>
+			<textField pattern="#,##0.###;(#,##0.###-)">
+				<reportElement x="179" y="0" width="51" height="15" forecolor="#000000" backcolor="#FFFFFF" uuid="2c82a8b9-e1d5-4036-a695-540c6ab3c446"/>
+				<box>
+					<pen lineWidth="0.0" lineColor="#818486"/>
+					<leftPen lineWidth="0.25" lineColor="#818486"/>
+					<bottomPen lineWidth="0.25" lineColor="#818486"/>
+					<rightPen lineWidth="0.0" lineColor="#818486"/>
+				</box>
+				<textElement textAlignment="Center">
+					<font size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{unassigned}]]></textFieldExpression>
+			</textField>
+			<textField pattern="#,##0.###;(#,##0.###-)">
+				<reportElement x="230" y="0" width="51" height="15" forecolor="#000000" backcolor="#FFFFFF" uuid="001a40ec-20ec-4dcf-8227-2bcf0f696b42"/>
+				<box>
+					<pen lineWidth="0.0" lineColor="#818486"/>
+					<leftPen lineWidth="0.25" lineColor="#818486"/>
+					<bottomPen lineWidth="0.25" lineColor="#818486"/>
+					<rightPen lineWidth="0.0" lineColor="#818486"/>
+				</box>
+				<textElement textAlignment="Center">
+					<font size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{critical}]]></textFieldExpression>
+			</textField>
+			<textField pattern="#,##0.###;(#,##0.###-)">
+				<reportElement x="434" y="0" width="51" height="15" forecolor="#000000" backcolor="#FFFFFF" uuid="3b7ba3b5-10ac-4d06-94e5-89fcdb64c85d"/>
+				<box>
+					<pen lineWidth="0.0"/>
+					<leftPen lineWidth="0.25" lineColor="#818486"/>
+					<bottomPen lineWidth="0.25" lineColor="#818486"/>
+					<rightPen lineWidth="0.0" lineColor="#818486"/>
+				</box>
+				<textElement textAlignment="Center">
+					<font size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{pending}]]></textFieldExpression>
+			</textField>
+			<textField pattern="#,##0.###;(#,##0.###-)">
+				<reportElement x="332" y="0" width="51" height="15" forecolor="#000000" backcolor="#FFFFFF" uuid="904fe30a-7da5-41ae-851b-569f0d035ece"/>
+				<box>
+					<pen lineWidth="0.0" lineColor="#818486"/>
+					<leftPen lineWidth="0.25" lineColor="#818486"/>
+					<bottomPen lineWidth="0.25" lineColor="#818486"/>
+					<rightPen lineWidth="0.0" lineColor="#818486"/>
+				</box>
+				<textElement textAlignment="Center">
+					<font size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{false_positive}]]></textFieldExpression>
+			</textField>
+			<textField pattern="#,##0.###;(#,##0.###-)">
+				<reportElement x="281" y="0" width="51" height="15" forecolor="#000000" uuid="0d81d5a2-c330-4fcb-b234-102f31149ab1"/>
+				<box>
+					<pen lineWidth="0.0" lineColor="#818486"/>
+					<leftPen lineWidth="0.25" lineColor="#818486"/>
+					<bottomPen lineWidth="0.25" lineColor="#818486"/>
+					<rightPen lineWidth="0.0" lineColor="#818486"/>
+				</box>
+				<textElement textAlignment="Center">
+					<font size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{confirmed}]]></textFieldExpression>
+			</textField>
+			<textField pattern="#,##0.###;(#,##0.###-)">
+				<reportElement x="383" y="0" width="51" height="15" forecolor="#000000" backcolor="#FFFFFF" uuid="e601a70b-7c2f-4751-a03f-fd913fa188d1"/>
+				<box>
+					<pen lineWidth="0.0" lineColor="#818486"/>
+					<leftPen lineWidth="0.25" lineColor="#818486"/>
+					<bottomPen lineWidth="0.25" lineColor="#818486"/>
+					<rightPen lineWidth="0.0" lineColor="#818486"/>
+				</box>
+				<textElement textAlignment="Center">
+					<font size="8"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$F{waived}]]></textFieldExpression>
+			</textField>
+		</band>
+	</detail>
+	<noData>
+		<band height="15">
+			<property name="com.jaspersoft.studio.unit.height" value="px"/>
+		</band>
+	</noData>
+</jasperReport>

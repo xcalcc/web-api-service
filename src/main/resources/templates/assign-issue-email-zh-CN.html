@@ -1,0 +1,242 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+
+	<head>
+		<title>指派缺陷邮件</title>
+		<meta name="viewport" content="width=device-width" />
+		<meta http-equiv="content-type" content="text/html" charset="utf-8" />
+		<style>
+			@import url('https://fonts.googleapis.com/css?family=Barlow:100,100i,200,200i,300,300i,400,400i,500,500i,600,600i,700,700i,800,800i,900,900i');
+			@import url('https://fonts.googleapis.com/css?family=Barlow+Condensed:100,100i,200,200i,300,300i,400,400i,500,500i,600,600i,700,700i,800,800i,900,900i');
+
+			#root {
+				background-color: #efefef;
+				margin: 0 auto;
+				max-width: 600px;
+			}
+
+			@media screen and (max-width: 399px) {
+				#root {
+					width: 320px;
+					min-width: 320px;
+				}
+			}
+
+			.cell {
+				width: 80px;
+			}
+
+			@media screen and (max-width: 399px) {
+				.cell {
+					width: 64px;
+				}
+			}
+
+		</style>
+	</head>
+
+	<body style="font-family: 'Barlow', sans-serif; margin: 0; padding: 0;">
+		<table id="root" align="center" bgcolor="#efefef" cellpadding="0" cellspacing="0" style="border-collapse: collapse; border-spacing: 0;">
+			<tr>
+				<td>
+					<table cellpadding="0" cellspacing="0" width="100%" style="border-collapse: collapse; border-spacing: 0; width: 100%;">
+						<tr>
+							<td>
+								<table cellpadding="0" cellspacing="0" width="100%" style="border-collapse: collapse; border-spacing: 0; width: 100%;">
+									<tr>
+										<td>
+											<img style="width: 100%; height: 32px; vertical-align: top;" src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAhgAAAAgCAYAAABQMgH5AAAACXBIWXMAAAsTAAALEwEAmpwYAAAAAXNSR0IArs4c6QAAAARnQU1BAACxjwv8YQUAAAGXSURBVHgB7dpBboJAAIbREbtor9ML9OoewSPQE1RX3ai0I6U1NCYqIw7De4kQyBzgi/yLz9e3JgAAnGpC3d7CZhF/i/a+D802vlsewscuVNt4ZhlCvY/vvn/x+WW9qp8CAFCUpmlj4Oex7uIgPuxC8348c6jqeI9x0J2Ll+cYE+vVJgwkMAAgI/04iJdq0d77cRDPVe3Z43OqOEhBYABASr1PC10c9D8tdHHQfVrIKQ5SEBgA0Bm4Owj8EhgAFGHI7kAcpCcwAHi4UnYH/BEYAAxnd0CPwACYO7sD7kBgAEyY3QG5EhgAD2J3QMkEBsCt7A7gLIEBzJPdAdyVwAAmx+4A8icwgFHZHcA8CAzgOnYHwAUEBsyJ3QEwEoEBE2F3AEyJwIAR2B0AcyMw4BJ2BwBXERiUz+4AYHQCg6zZHQBMk8DgbuwOAOZLYHDejbuDeMa/BwDzJjBKZXcAwAMJjAwN2R34tABADgRGYnYHACAw/rM7AIDBygoMuwMAyEI2gWF3AADlSBIYdgcAwKk2MOwOAICEvgAQIHYjUVb3QgAAAABJRU5ErkJggg==" />
+										</td>
+										<td style="width: 64px;">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</td>
+									</tr>
+								</table>
+							</td>
+						</tr>
+						<tr>
+							<td>
+								<table cellpadding="0" cellspacing="0" width="100%" style="border-collapse: collapse; border-spacing: 0; width: 100%;">
+									<tr>
+										<td style="text-align: right;">
+											<img style="width: 100px; height: 40px; vertical-align: top;" src="data:image/png;base64,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" />
+										</td>
+										<td style="width: 32px;"></td>
+									</tr>
+								</table>
+							</td>
+						</tr>
+						<tr>
+							<td style="height: 24px;"></td>
+						</tr>
+						<tr>
+							<td>
+								<table cellpadding="0" cellspacing="0" width="100%" style="border-collapse: collapse; border-spacing: 0; width: 100%;">
+									<tr>
+										<td style="width: 32px;"></td>
+										<td style="background-color: #ffffff; height: 32px;"></td>
+										<td style="width: 32px;"></td>
+									</tr>
+									<tr>
+										<td style="width: 32px;"></td>
+										<td style="background-color: #ffffff; font-size: 12px; font-weight: 300; padding: 0 32px; line-height: 16px;">
+											<p>你好，<span style="font-weight: 700;" th:text="${userDisplayName}"></span></p>
+											<p><span style="font-weight: 700;" th:text="${assignerDisplayName}"></span>指派了项目<span style="font-weight: 700;" th:text="${projectName}"></span>中的一项缺陷供你核查修复。请尽快核查并修复这些问题，确保项目代码高质量交付，符合安全监管要求。</p>
+										</td>
+										<td style="width: 32px;"></td>
+									</tr>
+									<tr>
+										<td style="width: 32px;"></td>
+										<td style="background-color: #ffffff; height: 64px;"></td>
+										<td style="width: 32px;"></td>
+									</tr>
+									<tr>
+										<td style="width: 32px;"></td>
+										<td style="background-color: #ffffff; font-size: 9px; font-weight: 400; padding: 0 32px; line-height: 16px;">
+											<table cellpadding="0" cellspacing="0" width="100%" style="border-collapse: collapse; border-spacing: 0; width: 100%;">
+												<tr>
+													<td class="cell" style="font-weight: 600;">扫描日期</td>
+													<td><span th:text="${#dates.format(scanStartAt, 'yyyy/MM/dd')}"></span></td>
+													<td style="font-weight: 600; width: 40px;">风险</td>
+												</tr>
+												<tr>
+													<td class="cell" style="font-weight: 600;">扫描时间</td>
+													<td><span th:text="${#dates.format(scanStartAt, 'HH:mm')}"></span></td>
+													<td style="width: 40px;">
+														<div th:if="${issueGroup.criticality} == 'HIGH'" style="color: #ffffff; background-color: #f7323f; border-radius: 6px; font-family: 'Barlow Condensed', sans-serif; font-size: 7px; font-weight: 600; height: 12px; line-height: 12px; text-align: center;">高</div>
+														<div th:if="${issueGroup.criticality} == 'MEDIUM'" style="color: #ffffff; background-color: #f78732; border-radius: 6px; font-family: 'Barlow Condensed', sans-serif; font-size: 7px; font-weight: 600; height: 12px; line-height: 12px; text-align: center;">中</div>
+														<div th:if="${issueGroup.criticality} == 'LOW'" style="color: #ffffff; background-color: #32a2f7; border-radius: 6px; font-family: 'Barlow Condensed', sans-serif; font-size: 7px; font-weight: 600; height: 12px; line-height: 12px; text-align: center;">低</div>
+													</td>
+												</tr>
+											</table>
+										</td>
+										<td style="width: 32px;"></td>
+									</tr>
+									<tr>
+										<td style="width: 32px;"></td>
+										<td style="background-color: #ffffff; height: 16px;"></td>
+										<td style="width: 32px;"></td>
+									</tr>
+									<tr>
+										<td style="width: 32px;"></td>
+										<td style="background-color: #ffffff; font-size: 9px; font-weight: 400; padding: 0 32px; line-height: 16px;">
+											<table cellpadding="0" cellspacing="0" width="100%" style="border-collapse: collapse; border-spacing: 0; border-top: 1px solid #efefef; border-bottom: 1px solid #efefef; width: 100%;">
+												<tr>
+													<td class="cell"></td>
+													<td class="cell" style="height: 16px;"></td>
+													<td></td>
+												</tr>
+												<tr>
+													<td class="cell" style="font-weight: 600;">编号</td>
+													<td class="cell" style="font-weight: 600;">类型</td>
+													<td style="font-weight: 600;">描述</td>
+												</tr>
+												<tr>
+													<td class="cell"><span th:text="${issueGroup.id}"></span></td>
+													<td class="cell"><span th:text="${ruleInfo.ruleCode}"></span></td>
+													<td><span th:text="${ruleInfo.name}"></span></td>
+												</tr>
+												<tr>
+													<td class="cell"></td>
+													<td class="cell" style="height: 16px;"></td>
+													<td></td>
+												</tr>
+											</table>
+										</td>
+										<td style="width: 32px;"></td>
+									</tr>
+									<tr>
+										<td style="width: 32px;"></td>
+										<td style="background-color: #ffffff; height: 16px;"></td>
+										<td style="width: 32px;"></td>
+									</tr>
+									<tr>
+										<td style="width: 32px;"></td>
+										<td style="background-color: #ffffff; font-size: 9px; font-weight: 400; padding: 0 32px; line-height: 16px;">
+											<table cellpadding="0" cellspacing="0" width="100%" style="border-collapse: collapse; border-spacing: 0; width: 100%;">
+												<tr>
+													<td class="cell" style="font-weight: 600;">文件</td>
+													<td><span th:text="${issueGroup.sinkRelativePath} != null ? ${issueGroup.sinkRelativePath} : ${issueGroup.srcRelativePath}"></span></td>
+												</tr>
+												<tr>
+													<td class="cell" style="font-weight: 600;">行号</td>
+													<td><span th:text="${issueGroup.sinkLineNo} != 0 ? ${issueGroup.sinkLineNo} : ${issueGroup.srcLineNo}"></span></td>
+												</tr>
+												<tr>
+													<td class="cell" style="font-weight: 600;">函数名</td>
+													<td><span th:text="${issueGroup.functionName}"></span></td>
+												</tr>
+												<tr>
+													<td class="cell" style="font-weight: 600;">变量名</td>
+													<td><span th:text="${issueGroup.variableName}"></span></td>
+												</tr>
+											</table>
+										</td>
+										<td style="width: 32px;"></td>
+									</tr>
+									<tr>
+										<td style="width: 32px;"></td>
+										<td style="background-color: #ffffff; height: 64px;"></td>
+										<td style="width: 32px;"></td>
+									</tr>
+									<tr>
+										<td style="width: 32px;"></td>
+										<td style="background-color: #ffffff; font-size: 9px; font-weight: 400; padding: 0 32px; line-height: 16px; text-align: center;">
+											登录查看更多详细内容，<br />或使用Xcalscan IDE插件查看和修正您的代码。
+										</td>
+										<td style="width: 32px;"></td>
+									</tr>
+									<tr>
+										<td style="width: 32px;"></td>
+										<td style="background-color: #ffffff; height: 32px;"></td>
+										<td style="width: 32px;"></td>
+									</tr>
+									<tr>
+										<td style="width: 32px;"></td>
+										<td style="background-color: #ffffff; font-size: 12px; font-weight: 300; padding: 0 32px; line-height: 16px;">
+											<a style="color: #000000; text-decoration: none;" target="_blank" th:href="${uiHost}">
+												<div style="color: #ffffff; background-color: #f7323f; border-width: 8px; border-style: solid; border-color: #f7323f; font-family: 'Barlow Condensed', sans-serif; font-size: 12px; font-weight: 600; text-align: center;">登录</div>
+											</a>
+										</td>
+										<td style="width: 32px;"></td>
+									</tr>
+									<tr>
+										<td style="width: 32px;"></td>
+										<td style="background-color: #ffffff; height: 32px;"></td>
+										<td style="width: 32px;"></td>
+									</tr>
+									<tr>
+										<td style="width: 32px;"></td>
+										<td style="background-color: #ffffff; font-size: 9px; font-weight: 400; padding: 0 32px; line-height: 16px; text-align: center;">
+											这封邮件由鉴释代表<span th:text="${assignerDisplayName}"></span>发送，<br />如果你需要帮助，请发送邮件至<a style="color: #000000; text-decoration: none;" href="mailto:support@xcalibyte.com">support@xcalibyte.com</a>。
+										</td>
+										<td style="width: 32px;"></td>
+									</tr>
+									<tr>
+										<td style="width: 32px;"></td>
+										<td style="background-color: #ffffff; height: 32px;"></td>
+										<td style="width: 32px;"></td>
+									</tr>
+								</table>
+							</td>
+						</tr>
+						<tr>
+							<td style="height: 32px;"></td>
+						</tr>
+						<tr>
+							<td>
+								<table cellpadding="0" cellspacing="0" width="100%" style="border-collapse: collapse; border-spacing: 0; width: 100%;">
+									<tr>
+										<td style="width: 64px;">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</td>
+										<td style="text-align: right;">
+											<img style="width: 100%; height: 32px; vertical-align: top;" src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAhgAAAAgCAYAAABQMgH5AAAACXBIWXMAAAsTAAALEwEAmpwYAAAAAXNSR0IArs4c6QAAAARnQU1BAACxjwv8YQUAAAGFSURBVHgB7dptboIwAMfh4gV0J5D7X8YbyajDrJu4GSkvLc+TmELku7/IvwkAAInL5RKPdrg9pZ/D4XC8Xq8f/Xnquu4YH+iv2/76/kx0bgIAUI0hDtIf+3bkPjRNc45njIN49oHQDt+nz76rExgAsBFP4uDhTOLg9mzmOMhBYABALk9eLdzuf79aSOLgxyuIUAeBAQBRht1BG7gTGACUL8PuoA3kJDAAWFdFuwO+CQwAprE7YITAANgzuwNmIjAASmV3wIYJDIA12B1QOYEB8A67A/iTwAD2x+4AZicwgLLYHUARBAawHLsD2A2BAbzO7gB4kcCAvbA7ABYkMKAUfSDYHQClEBiwhJE4eDjtDoCKCAx4RR8I7XBpdwDwP4FB/UbiwO4AYF4Cg22zOwAoksBgPnYHALslMHhuwu4gBP8eAOyZwKiV3QEAKxIYWzRxd+DVAgBrExi52R0AgMB4YHcAAJPVFRh2BwCwCdsJDLsDAKhGnsCwOwAAEl+BYXcAAGTUfQIft01QtFpGdgAAAABJRU5ErkJggg==" />
+										</td>
+									</tr>
+								</table>
+							</td>
+						</tr>
+					</table>
+				</td>
+			</tr>
+		</table>
+	</body>
+
+</html>

@@ -1,0 +1,117 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!--
+  ~ Copyright (C) 2019-2022 Xcalibyte (Shenzhen) Limited.
+  ~ Licensed under the Apache License, Version 2.0 (the "License");
+  ~ you may not use this file except in compliance with the License.
+  ~ You may obtain a copy of the License at
+  ~ http://www.apache.org/licenses/LICENSE-2.0
+  ~ Unless required by applicable law or agreed to in writing, software
+  ~ distributed under the License is distributed on an "AS IS" BASIS,
+  ~ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+  ~ See the License for the specific language governing permissions and
+  ~ limitations under the License.
+  -->
+
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.xcal.api.mapper.IssueMapper">
+    <resultMap id="issue" type="com.xcal.api.entity.v3.Issue">
+        <id property="id" column="id" jdbcType="OTHER"
+            typeHandler="com.xcal.api.config.UUIDTypeHandler"/>
+        <result property="issueGroupId" column="issue_group_id" jdbcType="VARCHAR"/>
+        <result property="certainty" column="certainty" jdbcType="VARCHAR"/>
+        <result property="traceCount" column="trace_count" jdbcType="INTEGER"/>
+        <result property="tracePath" column="trace_path" jdbcType="VARCHAR"/>
+        <result property="status" column="status" jdbcType="VARCHAR"/>
+        <result property="dsr" column="dsr" jdbcType="VARCHAR"/>
+    </resultMap>
+    <select id="getIssueList" resultMap="issue">
+        select id, issue_group_id, certainty, trace_count, trace_path, status, dsr
+        from "issue"
+        where issue_group_id = #{issueGroupId}
+        and scan_task_id=#{scanTaskId}
+        offset #{offset} limit #{limit}
+    </select>
+    <select id="getIssueListByScanTaskId" resultMap="issue">
+        select id, issue_group_id, certainty, trace_count, trace_path, status, dsr
+        from "issue"
+        where scan_task_id=#{scanTaskId}
+    </select>
+    <select id="getIssueCount" resultType="java.lang.Long">
+        select count(1)
+        from "issue"
+        where issue_group_id = #{issueGroupId}
+        and scan_task_id=#{scanTaskId}
+    </select>
+
+    <insert id="batchInsertIssue">
+        insert into "issue" (
+        issue_group_id,
+        certainty,
+        trace_count,
+        trace_path,
+        status,
+        dsr
+        ) values
+        <foreach collection="issueList" item="item" separator=", ">
+            (
+            #{item.issueGroupId},
+            #{item.certainty},
+            #{item.traceCount},
+            #{item.tracePath},
+            #{item.status},
+            #{item.dsr}
+            )
+        </foreach>
+    </insert>
+
+    <insert id="batchInsertIssueWithFaultTolerance">
+        <!-- Use "insert into select" to ensure inserting issue only when which issue group exist -->
+        <!-- ie. When issue group not exist for the issue, do nothing-->
+        INSERT into "issue" (
+        scan_task_id,
+        issue_group_id,
+        certainty,
+        trace_count,
+        trace_path,
+        status,
+        dsr
+        )
+        SELECT
+            val.scan_task_id,
+            val.issue_group_id,
+            val.certainty,
+            val.trace_count,
+            val.trace_path,
+            val.status,
+            val.dsr
+        FROM ( VALUES
+        <foreach collection="issueList" item="item" separator=", ">
+            (
+            #{item.scanTaskId, jdbcType=OTHER, typeHandler=com.xcal.api.config.UUIDTypeHandler}::uuid,
+            #{item.issueGroupId},
+            #{item.certainty},
+            #{item.traceCount},
+            #{item.tracePath},
+            #{item.status},
+            #{item.dsr}
+            )
+        </foreach>
+        ) val (scan_task_id, issue_group_id,certainty,trace_count,trace_path,status,dsr)
+        INNER JOIN  issue_group on issue_group.id=val.issue_group_id;
+    </insert>
+    <update id="batchSoftDeleteIssueByIssueGroup">
+        update "issue" set status = 'D' where issue_group_id in
+        <foreach collection="issueGroupList" item="item" open="(" separator=", " close=")">
+            #{item.id}
+        </foreach>
+    </update>
+
+    <update id="batchHardDeleteIssueByIssueGroup">
+        delete from "issue" where issue_group_id in
+        <foreach collection="issueGroupList" item="item" open="(" separator=", " close=")">
+            #{item.id}
+        </foreach>
+    </update>
+</mapper>

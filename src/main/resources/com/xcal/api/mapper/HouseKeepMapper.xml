@@ -1,0 +1,105 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!--
+  ~ Copyright (C) 2019-2022 Xcalibyte (Shenzhen) Limited.
+  ~ Licensed under the Apache License, Version 2.0 (the "License");
+  ~ you may not use this file except in compliance with the License.
+  ~ You may obtain a copy of the License at
+  ~ http://www.apache.org/licenses/LICENSE-2.0
+  ~ Unless required by applicable law or agreed to in writing, software
+  ~ distributed under the License is distributed on an "AS IS" BASIS,
+  ~ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+  ~ See the License for the specific language governing permissions and
+  ~ limitations under the License.
+  -->
+
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.xcal.api.mapper.HouseKeepMapper">
+    <resultMap id="sourceCodeInfo" type="com.xcal.api.entity.v3.SourceCodeInfo">
+        <result property="scanTaskId" column="scan_task_id" jdbcType="OTHER"
+                typeHandler="com.xcal.api.config.UUIDTypeHandler"/>
+        <result property="fileStorageHost" column="file_storage_host" jdbcType="VARCHAR"/>
+        <result property="relativePath" column="relative_path" jdbcType="VARCHAR"/>
+    </resultMap>
+    <select id="getHouseKeepSourceCodeInfoList" resultMap="sourceCodeInfo">
+        select
+        st.id as scan_task_id,
+        fi.relative_path as relative_path,
+        fs.file_storage_host as file_storage_host
+        from "scan_task" as st
+        inner join scan_file as sf on st.id = sf.scan_task_id and parent_path is null
+        inner join file_info as fi on sf.file_info_id = fi.id
+        inner join file_storage as fs on fi.file_storage_id = fs.id and fs.name in ('volume_upload')
+        where house_keep_on is null
+        <if test="projectId != null">
+            and st.project_id = #{projectId, jdbcType=OTHER, typeHandler=com.xcal.api.config.UUIDTypeHandler}::uuid
+        </if>
+        and st.id not in (
+            select st2.id
+            from scan_task as st2
+            where st2.status = 'COMPLETED' and st2.project_id = st.project_id order by st2.created_on desc limit 1
+        )
+        and date_part('day', (date_trunc('day', now()) + interval '1 day') - st.created_on) >= #{retentionPeriod}
+    </select>
+    <delete id="removeNotReferencedFileInfo">
+        delete from file_info where type = 'SOURCE' and id not in (select file_info_id from scan_file)
+        and now() - created_on > interval '1 day'
+    </delete>
+    <delete id="removeScanData">
+        delete
+        from issue_string
+        where scan_task_id = #{scanTaskId};
+
+        delete
+        from issue_file where scan_task_id = #{scanTaskId};
+
+        delete
+        from issue
+        where scan_task_id = #{scanTaskId};
+
+        delete
+        from issue_group
+        where scan_task_id = #{scanTaskId};
+
+        delete
+        from scan_task_summary
+        where scan_task_id = #{scanTaskId};
+
+        delete
+        from scan_task_status_log
+        where scan_task_id = #{scanTaskId};
+
+        delete
+        from file_info
+        where id in (
+            select file_info_id
+            from scan_file
+            where scan_task_id = #{scanTaskId}
+        );
+
+        delete
+        from scan_file
+        where scan_task_id = #{scanTaskId};
+
+        delete
+        from project_config_attribute
+        where project_config_id in (
+            select project_config_id
+            from scan_task
+            where id = #{scanTaskId}
+        );
+
+        delete
+        from project_config
+        where id in (
+            select project_config_id
+            from scan_task
+            where id = #{scanTaskId}
+        );
+
+        delete
+        from scan_task
+        where id = #{scanTaskId};
+    </delete>
+</mapper>

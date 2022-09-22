@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!--
+  ~ Copyright (C) 2019-2022 Xcalibyte (Shenzhen) Limited.
+  ~ Licensed under the Apache License, Version 2.0 (the "License");
+  ~ you may not use this file except in compliance with the License.
+  ~ You may obtain a copy of the License at
+  ~ http://www.apache.org/licenses/LICENSE-2.0
+  ~ Unless required by applicable law or agreed to in writing, software
+  ~ distributed under the License is distributed on an "AS IS" BASIS,
+  ~ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+  ~ See the License for the specific language governing permissions and
+  ~ limitations under the License.
+  -->
+
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.xcal.api.mapper.IssueStringMapper">
+    <resultMap id="issueString" type="com.xcal.api.entity.v3.IssueString">
+        <id property="id" column="id" jdbcType="INTEGER"/>
+        <result property="scanTaskId" column="scan_task_id" jdbcType="OTHER"
+                typeHandler="com.xcal.api.config.UUIDTypeHandler"/>
+        <result property="str" column="str" jdbcType="VARCHAR"/>
+    </resultMap>
+    <select id="getIssueStringList" resultMap="issueString">
+        select id, scan_task_id, str
+        from "issue_string"
+        where scan_task_id = #{scanTaskId}
+    </select>
+    <insert id="batchInsertIssueString">
+        insert into "issue_string" (id, scan_task_id, str) values
+        <foreach collection="issueStringList" item="item" separator=", ">
+            (
+            #{item.id},
+            #{item.scanTaskId, jdbcType=OTHER, typeHandler=com.xcal.api.config.UUIDTypeHandler}::uuid,
+            #{item.str}
+            )
+        </foreach>
+        on conflict (scan_task_id, id) do update set str = excluded.str
+    </insert>
+</mapper>

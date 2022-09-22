@@ -1,0 +1,135 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!--
+  ~ Copyright (C) 2019-2022 Xcalibyte (Shenzhen) Limited.
+  ~ Licensed under the Apache License, Version 2.0 (the "License");
+  ~ you may not use this file except in compliance with the License.
+  ~ You may obtain a copy of the License at
+  ~ http://www.apache.org/licenses/LICENSE-2.0
+  ~ Unless required by applicable law or agreed to in writing, software
+  ~ distributed under the License is distributed on an "AS IS" BASIS,
+  ~ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+  ~ See the License for the specific language governing permissions and
+  ~ limitations under the License.
+  -->
+
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.xcal.api.mapper.ProjectMapper">
+    <resultMap id="project" type="com.xcal.api.entity.Project">
+        <id property="id" column="id" jdbcType="OTHER"
+            typeHandler="com.xcal.api.config.UUIDTypeHandler"/>
+        <result property="projectId" column="project_id" jdbcType="VARCHAR"/>
+        <result property="name" column="name" jdbcType="VARCHAR"/>
+        <result property="status" column="status" jdbcType="VARCHAR"/>
+        <result property="needDsr" column="need_dsr" jdbcType="BOOLEAN"/>
+        <result property="scanMode" column="scan_mode" jdbcType="VARCHAR"/>
+        <result property="createdBy" column="created_by" jdbcType="VARCHAR"/>
+        <result property="createdOn" column="created_on" jdbcType="TIMESTAMP"/>
+        <result property="modifiedBy" column="modified_by" jdbcType="VARCHAR"/>
+        <result property="modifiedOn" column="modified_on" jdbcType="TIMESTAMP"/>
+    </resultMap>
+    <select id="getProject" resultMap="project">
+        select id,
+               project_id,
+               name,
+               status,
+               need_dsr,
+               scan_mode,
+               created_by,
+               created_on,
+               modified_by,
+               modified_on
+        from project
+        where id = #{projectId};
+    </select>
+    <delete id="deleteProject">
+        delete
+        from issue_string
+        where scan_task_id in (
+            select id
+            from scan_task
+            where project_id = #{projectId}
+        );
+
+        delete
+        from issue_file
+        where scan_task_id in (
+            select id
+            from scan_task
+            where project_id = #{projectId}
+        );
+
+        delete
+        from issue
+        where issue_group_id in (
+            select id
+            from issue_group
+            where project_id = #{projectId}
+        );
+
+        delete
+        from issue_group
+        where project_id = #{projectId};
+
+        delete
+        from scan_task_summary
+        where scan_task_id in (
+            select id
+            from scan_task
+            where project_id = #{projectId}
+        );
+
+        delete
+        from scan_task_status_log
+        where scan_task_id in (
+            select id
+            from scan_task
+            where project_id = #{projectId}
+        );
+
+        delete
+        from file_info
+        where id in (
+            select file_info_id
+            from scan_file
+            where scan_task_id in (
+                select id
+                from scan_task
+                where project_id = #{projectId}
+            )
+        );
+
+        delete
+        from scan_file
+        where scan_task_id in (
+            select id
+            from scan_task
+            where project_id = #{projectId}
+        );
+
+        delete
+        from scan_task
+        where project_id = #{projectId};
+
+        delete
+        from project_summary
+        where project_id = #{projectId};
+
+        delete
+        from project_config_attribute
+        where project_config_id in (
+            select id
+            from project_config
+            where project_uuid = #{projectId}
+        );
+
+        delete
+        from project_config
+        where project_uuid = #{projectId};
+
+        delete
+        from project
+        where id = #{projectId};
+    </delete>
+</mapper>

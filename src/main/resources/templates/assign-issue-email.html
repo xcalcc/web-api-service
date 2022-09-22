@@ -1,0 +1,242 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+
+	<head>
+		<title>assign issue email</title>
+		<meta name="viewport" content="width=device-width" />
+		<meta http-equiv="content-type" content="text/html" charset="utf-8" />
+		<style>
+			@import url('https://fonts.googleapis.com/css?family=Barlow:100,100i,200,200i,300,300i,400,400i,500,500i,600,600i,700,700i,800,800i,900,900i');
+			@import url('https://fonts.googleapis.com/css?family=Barlow+Condensed:100,100i,200,200i,300,300i,400,400i,500,500i,600,600i,700,700i,800,800i,900,900i');
+
+			#root {
+				background-color: #efefef;
+				margin: 0 auto;
+				max-width: 600px;
+			}
+
+			@media screen and (max-width: 399px) {
+				#root {
+					width: 320px;
+					min-width: 320px;
+				}
+			}
+
+			.cell {
+				width: 80px;
+			}
+
+			@media screen and (max-width: 399px) {
+				.cell {
+					width: 64px;
+				}
+			}
+
+		</style>
+	</head>
+
+	<body style="font-family: 'Barlow', sans-serif; margin: 0; padding: 0;">
+		<table id="root" align="center" bgcolor="#efefef" cellpadding="0" cellspacing="0" style="border-collapse: collapse; border-spacing: 0;">
+			<tr>
+				<td>
+					<table cellpadding="0" cellspacing="0" width="100%" style="border-collapse: collapse; border-spacing: 0; width: 100%;">
+						<tr>
+							<td>
+								<table cellpadding="0" cellspacing="0" width="100%" style="border-collapse: collapse; border-spacing: 0; width: 100%;">
+									<tr>
+										<td>
+											<img style="width: 100%; height: 32px; vertical-align: top;" src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAhgAAAAgCAYAAABQMgH5AAAACXBIWXMAAAsTAAALEwEAmpwYAAAAAXNSR0IArs4c6QAAAARnQU1BAACxjwv8YQUAAAGXSURBVHgB7dpBboJAAIbREbtor9ML9OoewSPQE1RX3ai0I6U1NCYqIw7De4kQyBzgi/yLz9e3JgAAnGpC3d7CZhF/i/a+D802vlsewscuVNt4ZhlCvY/vvn/x+WW9qp8CAFCUpmlj4Oex7uIgPuxC8348c6jqeI9x0J2Ll+cYE+vVJgwkMAAgI/04iJdq0d77cRDPVe3Z43OqOEhBYABASr1PC10c9D8tdHHQfVrIKQ5SEBgA0Bm4Owj8EhgAFGHI7kAcpCcwAHi4UnYH/BEYAAxnd0CPwACYO7sD7kBgAEyY3QG5EhgAD2J3QMkEBsCt7A7gLIEBzJPdAdyVwAAmx+4A8icwgFHZHcA8CAzgOnYHwAUEBsyJ3QEwEoEBE2F3AEyJwIAR2B0AcyMw4BJ2BwBXERiUz+4AYHQCg6zZHQBMk8DgbuwOAOZLYHDejbuDeMa/BwDzJjBKZXcAwAMJjAwN2R34tABADgRGYnYHACAw/rM7AIDBygoMuwMAyEI2gWF3AADlSBIYdgcAwKk2MOwOAICEvgAQIHYjUVb3QgAAAABJRU5ErkJggg==" />
+										</td>
+										<td style="width: 64px;">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</td>
+									</tr>
+								</table>
+							</td>
+						</tr>
+						<tr>
+							<td>
+								<table cellpadding="0" cellspacing="0" width="100%" style="border-collapse: collapse; border-spacing: 0; width: 100%;">
+									<tr>
+										<td style="text-align: right;">
+											<img style="width: 90px; height: 40px; vertical-align: top;" src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAFwAAAAoCAYAAABzXJ2PAAAACXBIWXMAAAsTAAALEwEAmpwYAAAAAXNSR0IArs4c6QAAAARnQU1BAACxjwv8YQUAAAXiSURBVHgB7VpdUuNGEP5m7GQhW1sFJ1hxAgzkIS9ZixMEToA5AXAC4ARLTrDeEyycAEHesTgB4gZOJcVPFmbSLc2gsSyDjWQFp/RVTY1+5k/f9PR09wh429CUrvA/gkSNSlETXjFqwitGTXjFqAmvGDXhFaMmvGLUhFeMmvCKURNeMcog3DNp0joLKAG65S/c/uJ7nMatw2W53rjlbR94BbL1hMl7SAhYodR33u9Q2qW0TinKtLVF6QgpcX1zf4h8tCh9puQ7z0JT/nhEHW36Xcp7ebv6aV9D7Ip0DJFSYu99GAy1x6TdS7WvIDpu+YYSmz+GQZjX/t3apx2lxYEYFI7uHPUhwqA/NJ6ffR9Kf6HLoCF08KDFUVpXH8xfnB9awr9R2kBCbOC0wc99SouZtj2kQSX+uGtKv5nnHUpfMYwr8z40acH0yQNfwuBEW4wk/O9Vv9MAfZwmkoX+SrknhdiiD+q/U2IpSwhPDsnXgdbUD5WXEB+p8Y1R5Z/aRyyVx1xOaeJCwNPQv/90cb6bHZMh/JTHpPn7qB/qb4HHxe9pohabpuyZ+XiWwsBpo2XIyaJlci67aa65HA/QxzDhnkn8UetIyT015bP9vgiSoC2ejoYmyemdx/3drrQ/agH/Hzy26fZkoIIQPpd/1GLzQ+8s4Ec3q21e2a3vqSCkxbUicmN57M5dnG3H7beIUMGEivazg6NJETSJ872zyPSzTC21eFxWh9vOlp1qLIEepcucJp+WpPPMXnsYjT4GJfkaBXEP+dSGgo6vv8uhFclrxeOsibvIPiI++0kbo/eTR6gz5zYy9Z7V/yTV4XwYROm9vrTjyhLecurZ61PUmAgiXz3GsIRzASbdc975Ji8shTVSuGYhiz0vFSvZrF7sRNQoCS7hgclbTj5TZEuyDkhXBw3ViPBG0XSuA5Mz0XbDPMH46Js28jbZCKnNXwqU0tdkbqEhH58snPnw/AATgDczQWbNuxyd+7533kFi4pYKl/AIScesSl6zYfJqWEdFkFp2yUTbElqy/X+EVyDPlp42sq49k8Zk++b+Em8UZHYFrD5o3fg3q79WTtxr0czcM8E+Eq+RpT1CufCRhASs2ho7npELLQ5Jyn0JuU+uezfP3S7UPIUD7qTaEUK0yLZuJY5vMWQlPDD5NDZMcq1jFdVB6nUWAks5u9nsRt9SnAQl407qngkHbMRc6+ICmKdSLMpWJx2T7yGJzayghEm9V/KAuOgLCmL9xa53SeBYClgwmOTETV+iFbWNgsgS7o24LgoPqVS/aoMbhUVSI1KJOELZlPrLJGHX5yChYsOBA2Oum1683UH4JudgUBvlo1QdazEXBkfxBkqTeiNVKRsoR/niHDpCicgSziZhhDR86mFWoBMpb0DslCXl00CWcF5GrLutbvUxI7BmIm+gJjz7JuGahVaiWZ3kRQ9fgodkY7xC/gFEqeBNTUB5Usmu1bEcnqWDBTzK/BOicdqYNlwJ900eILXBlzE+PCSmXwcVgA8giNz9B0ft2fg2HbuNpVLy2pg2XMKtNIdOPomE/+fQU9qUy4RLOOu9COmgOQ7uhmtrlICshLvOzsxtnLMAS7iHRJpdzy/vnLNGQVjCrdroOe8ik/uYHjzMEprFx2sJ903uqhRrqXgYjupZPe85z+z1nxgPHRQgXOhkDOYAIgY5PfFqbCrdG6pgAk8SPyw7zzy81A/EUxmt9A4Kwtrh9vwyyrznXwQ8DP83EpjyPhK7O0K6Sr4Nd/P0e4SHZBWxuuogndCJoZU4oVOIDQH5+W6t3WaHR/OPOkTsu/CPoZMqOtk50RTKVVIe3661A5qwBW2CUx/YacqWF5rGKGKzkdpfjn/sUSh8buWe2uc5K4FJeRK+Yt55SIjnZ3sj2uF3HGmLkEzMhil7gnTy8Ez/QyBHpUuRpe3Yu1TUpkr+iCIXP/fUKY63QBzyPyNUx1c6JjsYVf5eNbpKx39O9ePwLJPN4QOqI0eMqfFA38HjEXog0uqetf4Lm5grzFdofe8AAAAASUVORK5CYII=" />
+										</td>
+										<td style="width: 32px;"></td>
+									</tr>
+								</table>
+							</td>
+						</tr>
+						<tr>
+							<td style="height: 24px;"></td>
+						</tr>
+						<tr>
+							<td>
+								<table cellpadding="0" cellspacing="0" width="100%" style="border-collapse: collapse; border-spacing: 0; width: 100%;">
+									<tr>
+										<td style="width: 32px;"></td>
+										<td style="background-color: #ffffff; height: 32px;"></td>
+										<td style="width: 32px;"></td>
+									</tr>
+									<tr>
+										<td style="width: 32px;"></td>
+										<td style="background-color: #ffffff; font-size: 12px; font-weight: 300; padding: 0 32px; line-height: 16px;">
+											<p>Hi <span style="font-weight: 700;" th:text="${userDisplayName}"></span>,</p>
+											<p><span style="font-weight: 700;" th:text="${assignerDisplayName}"></span> has assigned a defect on project <span style="font-weight: 700;" th:text="${projectName}"></span> for your attention and review. It is important for the quality and security of the project that you validate these defects and remediate as soon as possible.</p>
+										</td>
+										<td style="width: 32px;"></td>
+									</tr>
+									<tr>
+										<td style="width: 32px;"></td>
+										<td style="background-color: #ffffff; height: 64px;"></td>
+										<td style="width: 32px;"></td>
+									</tr>
+									<tr>
+										<td style="width: 32px;"></td>
+										<td style="background-color: #ffffff; font-size: 9px; font-weight: 400; padding: 0 32px; line-height: 16px;">
+											<table cellpadding="0" cellspacing="0" width="100%" style="border-collapse: collapse; border-spacing: 0; width: 100%;">
+												<tr>
+													<td class="cell" style="font-weight: 600;">SCAN DATE</td>
+													<td><span th:text="${#dates.format(scanStartAt, 'dd/MM/yyyy')}"></span></td>
+													<td style="font-weight: 600; width: 40px;">RISK</td>
+												</tr>
+												<tr>
+													<td class="cell" style="font-weight: 600;">SCAN TIME</td>
+													<td><span th:text="${#dates.format(scanStartAt, 'HH:mm')}"></span></td>
+													<td style="width: 40px;">
+														<div th:if="${issueGroup.criticality} == 'HIGH'" style="color: #ffffff; background-color: #f7323f; border-radius: 6px; font-family: 'Barlow Condensed', sans-serif; font-size: 7px; font-weight: 600; height: 12px; line-height: 12px; text-align: center;">HIGH</div>
+														<div th:if="${issueGroup.criticality} == 'MEDIUM'" style="color: #ffffff; background-color: #f78732; border-radius: 6px; font-family: 'Barlow Condensed', sans-serif; font-size: 7px; font-weight: 600; height: 12px; line-height: 12px; text-align: center;">MEDIUM</div>
+														<div th:if="${issueGroup.criticality} == 'LOW'" style="color: #ffffff; background-color: #32a2f7; border-radius: 6px; font-family: 'Barlow Condensed', sans-serif; font-size: 7px; font-weight: 600; height: 12px; line-height: 12px; text-align: center;">LOW</div>
+													</td>
+												</tr>
+											</table>
+										</td>
+										<td style="width: 32px;"></td>
+									</tr>
+									<tr>
+										<td style="width: 32px;"></td>
+										<td style="background-color: #ffffff; height: 16px;"></td>
+										<td style="width: 32px;"></td>
+									</tr>
+									<tr>
+										<td style="width: 32px;"></td>
+										<td style="background-color: #ffffff; font-size: 9px; font-weight: 400; padding: 0 32px; line-height: 16px;">
+											<table cellpadding="0" cellspacing="0" width="100%" style="border-collapse: collapse; border-spacing: 0; border-top: 1px solid #efefef; border-bottom: 1px solid #efefef; width: 100%;">
+												<tr>
+													<td class="cell"></td>
+													<td class="cell" style="height: 16px;"></td>
+													<td></td>
+												</tr>
+												<tr>
+													<td class="cell" style="font-weight: 600;">DEFECT ID</td>
+													<td class="cell" style="font-weight: 600;">TYPE</td>
+													<td style="font-weight: 600;">DESCRIPTION</td>
+												</tr>
+												<tr>
+													<td class="cell"><span th:text="${issueGroup.id}"></span></td>
+													<td class="cell"><span th:text="${ruleInfo.ruleCode}"></span></td>
+													<td><span th:text="${ruleInfo.name}"></span></td>
+												</tr>
+												<tr>
+													<td class="cell"></td>
+													<td class="cell" style="height: 16px;"></td>
+													<td></td>
+												</tr>
+											</table>
+										</td>
+										<td style="width: 32px;"></td>
+									</tr>
+									<tr>
+										<td style="width: 32px;"></td>
+										<td style="background-color: #ffffff; height: 16px;"></td>
+										<td style="width: 32px;"></td>
+									</tr>
+									<tr>
+										<td style="width: 32px;"></td>
+										<td style="background-color: #ffffff; font-size: 9px; font-weight: 400; padding: 0 32px; line-height: 16px;">
+											<table cellpadding="0" cellspacing="0" width="100%" style="border-collapse: collapse; border-spacing: 0; width: 100%;">
+												<tr>
+													<td class="cell" style="font-weight: 600;">FILE</td>
+													<td><span th:text="${issueGroup.sinkRelativePath} != null ? ${issueGroup.sinkRelativePath} : ${issueGroup.srcRelativePath}"></span></td>
+												</tr>
+												<tr>
+													<td class="cell" style="font-weight: 600;">LINE</td>
+													<td><span th:text="${issueGroup.sinkLineNo} != 0 ? ${issueGroup.sinkLineNo} : ${issueGroup.srcLineNo}"></span></td>
+												</tr>
+												<tr>
+													<td class="cell" style="font-weight: 600;">FUNCTION</td>
+													<td><span th:text="${issueGroup.functionName}"></span></td>
+												</tr>
+												<tr>
+													<td class="cell" style="font-weight: 600;">VARIABLE</td>
+													<td><span th:text="${issueGroup.variableName}"></span></td>
+												</tr>
+											</table>
+										</td>
+										<td style="width: 32px;"></td>
+									</tr>
+									<tr>
+										<td style="width: 32px;"></td>
+										<td style="background-color: #ffffff; height: 64px;"></td>
+										<td style="width: 32px;"></td>
+									</tr>
+									<tr>
+										<td style="width: 32px;"></td>
+										<td style="background-color: #ffffff; font-size: 9px; font-weight: 400; padding: 0 32px; line-height: 16px; text-align: center;">
+											Login to your account to view entire project scanning results.<br />Or use an Xcalscan IDE plug-ins to review and remediate your code.
+										</td>
+										<td style="width: 32px;"></td>
+									</tr>
+									<tr>
+										<td style="width: 32px;"></td>
+										<td style="background-color: #ffffff; height: 32px;"></td>
+										<td style="width: 32px;"></td>
+									</tr>
+									<tr>
+										<td style="width: 32px;"></td>
+										<td style="background-color: #ffffff; font-size: 12px; font-weight: 300; padding: 0 32px; line-height: 16px;">
+											<a style="color: #000000; text-decoration: none;" target="_blank" th:href="${uiHost}">
+												<div style="color: #ffffff; background-color: #f7323f; border-width: 8px; border-style: solid; border-color: #f7323f; font-family: 'Barlow Condensed', sans-serif; font-size: 12px; font-weight: 600; text-align: center;">LOG IN</div>
+											</a>
+										</td>
+										<td style="width: 32px;"></td>
+									</tr>
+									<tr>
+										<td style="width: 32px;"></td>
+										<td style="background-color: #ffffff; height: 32px;"></td>
+										<td style="width: 32px;"></td>
+									</tr>
+									<tr>
+										<td style="width: 32px;"></td>
+										<td style="background-color: #ffffff; font-size: 9px; font-weight: 400; padding: 0 32px; line-height: 16px; text-align: center;">
+											This message is sent by Xcalibyte on behalf of <span th:text="${assignerDisplayName}"></span>.<br />If you need help or support, please contact us at <a style="color: #000000; text-decoration: none;" href="mailto:support@xcalibyte.com">support@xcalibyte.com</a>.
+										</td>
+										<td style="width: 32px;"></td>
+									</tr>
+									<tr>
+										<td style="width: 32px;"></td>
+										<td style="background-color: #ffffff; height: 32px;"></td>
+										<td style="width: 32px;"></td>
+									</tr>
+								</table>
+							</td>
+						</tr>
+						<tr>
+							<td style="height: 32px;"></td>
+						</tr>
+						<tr>
+							<td>
+								<table cellpadding="0" cellspacing="0" width="100%" style="border-collapse: collapse; border-spacing: 0; width: 100%;">
+									<tr>
+										<td style="width: 64px;">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</td>
+										<td style="text-align: right;">
+											<img style="width: 100%; height: 32px; vertical-align: top;" src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAhgAAAAgCAYAAABQMgH5AAAACXBIWXMAAAsTAAALEwEAmpwYAAAAAXNSR0IArs4c6QAAAARnQU1BAACxjwv8YQUAAAGFSURBVHgB7dptboIwAMfh4gV0J5D7X8YbyajDrJu4GSkvLc+TmELku7/IvwkAAInL5RKPdrg9pZ/D4XC8Xq8f/Xnquu4YH+iv2/76/kx0bgIAUI0hDtIf+3bkPjRNc45njIN49oHQDt+nz76rExgAsBFP4uDhTOLg9mzmOMhBYABALk9eLdzuf79aSOLgxyuIUAeBAQBRht1BG7gTGACUL8PuoA3kJDAAWFdFuwO+CQwAprE7YITAANgzuwNmIjAASmV3wIYJDIA12B1QOYEB8A67A/iTwAD2x+4AZicwgLLYHUARBAawHLsD2A2BAbzO7gB4kcCAvbA7ABYkMKAUfSDYHQClEBiwhJE4eDjtDoCKCAx4RR8I7XBpdwDwP4FB/UbiwO4AYF4Cg22zOwAoksBgPnYHALslMHhuwu4gBP8eAOyZwKiV3QEAKxIYWzRxd+DVAgBrExi52R0AgMB4YHcAAJPVFRh2BwCwCdsJDLsDAKhGnsCwOwAAEl+BYXcAAGTUfQIft01QtFpGdgAAAABJRU5ErkJggg==" />
+										</td>
+									</tr>
+								</table>
+							</td>
+						</tr>
+					</table>
+				</td>
+			</tr>
+		</table>
+	</body>
+
+</html>

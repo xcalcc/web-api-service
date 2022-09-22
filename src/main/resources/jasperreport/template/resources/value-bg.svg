@@ -1,0 +1,18 @@
+<svg width="170" height="135" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
+	<g>
+		<title>background</title>
+		<rect fill="none" id="canvas_background" height="142" width="177" y="-1" x="-1"/>
+	</g>
+	<g>
+		<title>Layer 1</title>
+		<g id="svg_1">
+			<defs transform="translate(0 -1) translate(0 0.353333) translate(-3.66667 -2.33333) translate(-10 -11) translate(-377 -63)">
+				<polygon points="560.07,76.98 391.11,88.51 391.11,211.53 560.07,200   " id="SVGID_1_"/>
+			</defs>
+			<use x="-390.66667" y="-76.98" id="svg_2" fill="#F2F2F3" xlink:href="#SVGID_1_"/>
+			<clipPath transform="translate(0 -1) translate(0 0.353333) translate(-3.66667 -2.33333) translate(-10 -11) translate(-377 -63)" id="SVGID_2_">
+				<use id="svg_3" xlink:href="#SVGID_1_"/>
+			</clipPath>
+		</g>
+	</g>
+</svg>

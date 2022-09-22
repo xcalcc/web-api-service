@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE configuration>
+
+<configuration scan="true">
+    <include resource="org/springframework/boot/logging/logback/base.xml"/>
+
+    <property  resource="application.properties" />
+
+<!--    <appender name="LOGSTASH" class="net.logstash.logback.appender.LogstashTcpSocketAppender">-->
+<!--        <param name="Encoding" value="UTF-8"/>-->
+<!--        &lt;!&ndash;    should be an env variable in production    &ndash;&gt;-->
+<!--        <remoteHost>${LOGSTASH_HOST:-logstash}</remoteHost>-->
+<!--        &lt;!&ndash;    should be an env variable in production    &ndash;&gt;-->
+<!--        <port>${LOGSTASH_PORT:-5000}</port>-->
+<!--        <encoder class="net.logstash.logback.encoder.LogstashEncoder"/>-->
+<!--    </appender>-->
+
+    <logger name="org.springframework.web.filter.RequestLoggingFilter">
+        <level value="${LOG_LEVEL:-INFO}" />
+    </logger>
+
+    <root level="${LOG_LEVEL:-INFO}">
+<!--        <appender-ref ref="LOGSTASH"/>-->
+        <appender-ref ref="CONSOLE"/>
+    </root>
+
+</configuration>
