@@ -5,7 +5,7 @@
 
 # How to run
 ```bash
-git clone --recursive http://git.xc5.io/git/xc5-sz/web-api-service-main.git
+git clone --recursive https://github.com/xcalcc/web-api-service.git
 cd web-api-service-main
 mvn spring-boot:run
 ```
