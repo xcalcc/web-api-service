@@ -34,7 +34,7 @@
 		<!-- <repository>
 			<id>xcalibyte</id>
 			<name>Xcalibyte Internal</name>
-			<url>http://39.108.212.149:8082/artifactory/libs-release</url>
+			<url>http://127.0.0.1:8082/artifactory/libs-release</url>
 			<snapshots>
                 <enabled>false</enabled>
             </snapshots>
@@ -72,7 +72,7 @@
 		<!-- <pluginRepository>
 			<id>xcalibyte</id>
 			<name>Xcalibyte Internal</name>
-			<url>http://39.108.212.149:8082/artifactory/libs-release</url>
+			<url>http://127.0.0.1:8082/artifactory/libs-release</url>
 			<snapshots>
                 <enabled>false</enabled>
             </snapshots>

@@ -15,7 +15,7 @@ pipeline {
         stage('pull') {
             steps {
                 echo '========= pull =========='
-                git credentialsId: 'gitlab_xc5sdlcbot', branch: 'dev', url: 'https://gitlab.com/xc5sz/web-api-service-main.git'
+                git credentialsId: 'xxx', branch: 'dev', url: 'https://github.com/xcalcc/web-api-service.git'
             }
         }
         stage('build') {
@@ -62,7 +62,7 @@ pipeline {
                         echo "${oldImageID}"
                         newImageID = getNewImagesID()
                         echo "${newImageID}"
-                        withCredentials([usernamePassword(credentialsId: 'harbor_xc5sdlcbot', passwordVariable: 'password', usernameVariable: 'user')]) {
+                        withCredentials([usernamePassword(credentialsId: 'xxx', passwordVariable: 'password', usernameVariable: 'user')]) {
                             sh """
                       echo $tagName
                       set +e
