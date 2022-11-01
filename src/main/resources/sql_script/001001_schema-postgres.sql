@@ -621,4 +621,24 @@ CREATE TABLE IF NOT EXISTS xcalibyte.issue  (
 );
 CREATE INDEX IF NOT EXISTS idx_issue_issue_group ON xcalibyte.issue USING btree (issue_group_id);
 
+CREATE TABLE IF NOT EXISTS xcalibyte.issue_validation  (
+	id uuid NOT NULL DEFAULT uuid_generate_v4(),
+    project_id uuid NULL,
+	scan_task_id uuid NULL,
+    rule_code text NULL,
+    file_path text NULL,
+    function_name text NULL,
+    variable_name text NULL,
+    line_number int NULL,
+    type text NULL,
+    action text NULL,
+    scope text NULL,
+    created_by text,
+    created_on timestamp default CURRENT_TIMESTAMP,
+    modified_by text,
+    modified_on timestamp default CURRENT_TIMESTAMP,
+	CONSTRAINT issue_management_pkey PRIMARY KEY (id),
+	CONSTRAINT issue_management_project_id_fkey FOREIGN KEY (project_id) REFERENCES xcalibyte.project(id) ON DELETE CASCADE
+);
+
 

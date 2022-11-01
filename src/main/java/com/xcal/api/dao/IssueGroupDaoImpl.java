@@ -15,6 +15,7 @@ package com.xcal.api.dao;
 
 import com.xcal.api.entity.v3.IssueGroup;
 import com.xcal.api.entity.v3.IssueGroupCountRow;
+import com.xcal.api.entity.v3.IssueGroupSrcSinkFilePath;
 import com.xcal.api.entity.v3.ReportFileStatisticRow;
 import com.xcal.api.mapper.IssueGroupMapper;
 import com.xcal.api.model.dto.v3.SearchIssueSuggestionDto;
@@ -54,6 +55,7 @@ public class IssueGroupDaoImpl extends SqlSessionDaoSupport implements IssueGrou
             String certainty,
             List<String> dsrType,
             String criticality,
+            String validationAction,
             String searchValue,
             Pageable pageable
     ) {
@@ -69,6 +71,7 @@ public class IssueGroupDaoImpl extends SqlSessionDaoSupport implements IssueGrou
                         certainty,
                         dsrType,
                         criticality,
+                        validationAction,
                         StringUtil.splitAndTrim(searchValue,SEARCH_VAL_DELIMITER),
                         pageable.getPageNumber() * pageable.getPageSize(),
                         pageable.getPageSize()
@@ -84,6 +87,7 @@ public class IssueGroupDaoImpl extends SqlSessionDaoSupport implements IssueGrou
                         certainty,
                         dsrType,
                         criticality,
+                        validationAction,
                         StringUtil.splitAndTrim(searchValue,SEARCH_VAL_DELIMITER)
                 )
         );
@@ -117,6 +121,7 @@ public class IssueGroupDaoImpl extends SqlSessionDaoSupport implements IssueGrou
             String certainty,
             List<String> dsrType,
             String criticality,
+            String validationAction,
             String searchValue,
             Pageable pageable
     ) {
@@ -132,6 +137,7 @@ public class IssueGroupDaoImpl extends SqlSessionDaoSupport implements IssueGrou
                         certainty,
                         dsrType,
                         criticality,
+                        validationAction,
                         StringUtil.splitAndTrim(searchValue,SEARCH_VAL_DELIMITER),
                         pageable.getPageNumber() * pageable.getPageSize(),
                         pageable.getPageSize()
@@ -147,6 +153,7 @@ public class IssueGroupDaoImpl extends SqlSessionDaoSupport implements IssueGrou
                         certainty,
                         dsrType,
                         criticality,
+                        validationAction,
                         StringUtil.splitAndTrim(searchValue,SEARCH_VAL_DELIMITER)
                 )
         );
@@ -164,6 +171,7 @@ public class IssueGroupDaoImpl extends SqlSessionDaoSupport implements IssueGrou
             String certainty,
             List<String> dsrType,
             String criticality,
+            String issueValidation,
             String searchValue,
             int offset,
             int limit
@@ -180,10 +188,17 @@ public class IssueGroupDaoImpl extends SqlSessionDaoSupport implements IssueGrou
                         certainty,
                         dsrType,
                         criticality,
+                        issueValidation,
                         StringUtil.splitAndTrim(searchValue,SEARCH_VAL_DELIMITER),
                         offset,
                         limit
                 );
+    }
+
+    @Override
+    public List<IssueGroupSrcSinkFilePath> getIssueGroupSrcSinkFilePathListByScanTaskId(UUID scanTaskId) {
+        IssueGroupMapper mapper = this.getSqlSession().getMapper(IssueGroupMapper.class);
+        return mapper.getIssueGroupSrcSinkFilePathListByScanTaskId(scanTaskId);
     }
 
     @Override
@@ -194,6 +209,7 @@ public class IssueGroupDaoImpl extends SqlSessionDaoSupport implements IssueGrou
                 null,
                 null,
                 ruleSets,
+                null,
                 null,
                 null,
                 null,
@@ -280,6 +296,7 @@ public class IssueGroupDaoImpl extends SqlSessionDaoSupport implements IssueGrou
             List<String> dsrType,
             String criticality,
             Boolean assigned,
+            String validationAction,
             String searchValue
     ) {
         IssueGroupMapper mapper = this.getSqlSession().getMapper(IssueGroupMapper.class);
@@ -295,6 +312,7 @@ public class IssueGroupDaoImpl extends SqlSessionDaoSupport implements IssueGrou
                 dsrType,
                 criticality,
                 assigned,
+                validationAction,
                 StringUtil.splitAndTrim(searchValue,SEARCH_VAL_DELIMITER)
         );
     }
@@ -313,6 +331,7 @@ public class IssueGroupDaoImpl extends SqlSessionDaoSupport implements IssueGrou
             List<String> dsrType,
             String criticality,
             Boolean assigned,
+            String validationAction,
             String searchValue
     ) {
         IssueGroupMapper mapper = this.getSqlSession().getMapper(IssueGroupMapper.class);
@@ -327,6 +346,7 @@ public class IssueGroupDaoImpl extends SqlSessionDaoSupport implements IssueGrou
                 dsrType,
                 criticality,
                 assigned,
+                validationAction,
                 StringUtil.splitAndTrim(searchValue,SEARCH_VAL_DELIMITER));
     }
 
@@ -358,6 +378,7 @@ public class IssueGroupDaoImpl extends SqlSessionDaoSupport implements IssueGrou
             List<String> dsrType,
             String criticality,
             Boolean assigned,
+            String validationAction,
             String searchValue
     ) {
         IssueGroupMapper mapper = this.getSqlSession().getMapper(IssueGroupMapper.class);
@@ -372,6 +393,7 @@ public class IssueGroupDaoImpl extends SqlSessionDaoSupport implements IssueGrou
                 dsrType,
                 criticality,
                 assigned,
+                validationAction,
                 StringUtil.splitAndTrim(searchValue,SEARCH_VAL_DELIMITER)
         );
     }

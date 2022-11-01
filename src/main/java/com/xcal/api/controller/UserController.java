@@ -630,6 +630,7 @@ public class UserController {
                         searchIssueGroupRequest.getCertainty(),
                         searchIssueGroupRequest.getDsrType(),
                         searchIssueGroupRequest.getCriticality(),
+                        searchIssueGroupRequest.getValidationAction(),
                         searchIssueGroupRequest.getSearchValue(),
                         pageable));
 

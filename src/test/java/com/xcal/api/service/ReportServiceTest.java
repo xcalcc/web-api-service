@@ -258,10 +258,10 @@ class ReportServiceTest {
         List<IssueGroup> issueGroups = Arrays.asList(IssueGroup.builder()
                 .srcLineNo(10)
                 .sinkLineNo(10).build());
-        when(issueGroupDao.getIssueGroupList(any(UUID.class),any(UUID.class),isNull(),isNull(),anyList(),isNull(),isNull(),isNull(),isNull(),isNull(),anyInt(),anyInt()))
+        when(issueGroupDao.getIssueGroupList(any(UUID.class),any(UUID.class),isNull(),isNull(),anyList(),isNull(),isNull(),isNull(),isNull(),isNull(),isNull(),anyInt(),anyInt()))
                 .thenReturn(issueGroups)//first call
                 .thenReturn(new ArrayList<>());//second call
-        doReturn(2L).when(issueGroupMapper).getIssueGroupCount(any(),any(),any(),any(),any(),any(),any(),any(),any(),any());
+        doReturn(2L).when(issueGroupMapper).getIssueGroupCount(any(),any(),any(),any(),any(),any(),any(),any(),any(),any(),any());
         Resource resource = reportService.generateIssueCsvReport(scanTask, reportRequest, "SINGLE",false,480, true, Locale.ENGLISH);
 
         List<String> csvLines = FileUtils.readLines(resource.getFile(), Charset.defaultCharset());
@@ -295,7 +295,7 @@ class ReportServiceTest {
                 IssueGroupCountRow.builder().ruleCode("UIV").count("10").build()
 
         );
-        doReturn(highDefiniteList).when(issueGroupDao).getIssueGroupCountWithFilter(any(),any(),isNull(),isNull(),isNull(),isNull(),isNull(),any(),isNull(),any(),any(),isNull());
+        doReturn(highDefiniteList).when(issueGroupDao).getIssueGroupCountWithFilter(any(),any(),isNull(),isNull(),isNull(),isNull(),isNull(),any(),isNull(),any(),any(), any(), isNull());
         Map<String, ReportPDFResponse.CountValue> certaintyCriticalityMap = reportService.getCertaintyCriticalityMap(SearchIssueGroupRequest.builder().build(),"H","H",true,20);
         assertEquals(10 ,certaintyCriticalityMap.get("AOB").getCount());
         assertEquals(50f ,certaintyCriticalityMap.get("AOB").getPercentage());

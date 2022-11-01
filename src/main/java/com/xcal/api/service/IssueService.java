@@ -23,6 +23,7 @@ import com.xcal.api.dao.*;
 import com.xcal.api.entity.*;
 import com.xcal.api.entity.v3.IssueFile;
 import com.xcal.api.entity.v3.IssueGroup;
+import com.xcal.api.entity.v3.IssueGroupSrcSinkFilePath;
 import com.xcal.api.entity.v3.Trace;
 import com.xcal.api.exception.AppException;
 import com.xcal.api.exception.BusinessException;
@@ -2942,39 +2943,54 @@ public class IssueService {
         return this.issueGroupDao.findIssueGroupStartWith(prefix);
     }
 
-    public Set<String> findFilePathContainsIssue(UUID scanTaskId) throws AppException {
-        log.info("[findFilePathContainsIssue] scanTask, id: {}", scanTaskId);
-        List<com.xcal.api.entity.v3.Issue> issues = this.issueMapperDao.findByScanTaskId(scanTaskId);
-
-        List<IssueFile> issueFiles = this.issueFileDao.getIssueFileList(scanTaskId);
-        Map<Integer, String> issueFileMap = issueFiles.stream().collect(Collectors.toMap(IssueFile::getId, IssueFile::getPath));
-
-        ObjectMapper om = new ObjectMapper();
-        JavaType type = om.getTypeFactory().constructParametricType(List.class, Trace.class);
-
+    public Set<String> findFilePathContainsIssue(ScanTask scanTask) throws AppException {
+        log.info("[findFilePathContainsIssue] scanTask, id: {}", scanTask.getId());
         Set<String> filePaths = new HashSet<>();
 
-        for(com.xcal.api.entity.v3.Issue issue: issues) {
-            try {
-                List<Trace> tracePath = om.readValue(issue.getTracePath(), type);
-                for(Trace trace: tracePath) {
-                    filePaths.add(issueFileMap.getOrDefault(trace.getFileId(), "").replaceAll("^(\\$[ht])?/", ""));
-                }
-            } catch (IOException e) {
-                log.error("[findFilePathContainsIssue] parse issue trace path failed: {}: {}", e.getClass(), e.getMessage());
-                log.error("[findFilePathContainsIssue] error stack trace info: {}", Arrays.toString(e.getStackTrace()));
-                // TODO: need to add new error code here
-                throw new AppException(AppException.LEVEL_ERROR, AppException.ERROR_CODE_INTERNAL_ERROR, HttpURLConnection.HTTP_INTERNAL_ERROR, AppException.ErrorCode.E_API_COMMON_COMMON_INTERNAL_ERROR.unifyErrorCode,
-                        CommonUtil.formatString("[{}]  issue: {}", AppException.ErrorCode.E_API_COMMON_COMMON_INTERNAL_ERROR.messageTemplate, issue.getTracePath()),e);
+        // get src/sink file paths from issue group
+        List<IssueGroupSrcSinkFilePath> issueGroupSrcSinkFilePathList = issueGroupDao.getIssueGroupSrcSinkFilePathListByScanTaskId(scanTask.getId());
+        log.info("[findFilePathContainsIssue] issue group src sink file path list size: {}", issueGroupSrcSinkFilePathList.size());
+        for(IssueGroupSrcSinkFilePath issueGroupSrcSinkFilePath: issueGroupSrcSinkFilePathList) {
+            if (StringUtils.isNotBlank(issueGroupSrcSinkFilePath.getSrcRelativePath())) {
+                filePaths.add(issueGroupSrcSinkFilePath.getSrcRelativePath().replaceAll("^(\\$[ht])?/", ""));
+            }
+            if (StringUtils.isNotBlank(issueGroupSrcSinkFilePath.getSinkRelativePath())) {
+                filePaths.add(issueGroupSrcSinkFilePath.getSinkRelativePath().replaceAll("^(\\$[ht])?/", ""));
             }
         }
+
+        // get file paths from issue trace path: only for cross file scan.
+        if(EnumUtils.getEnumIgnoreCase(VariableUtil.ScanMode.class, scanTask.getProjectConfig().getFirstAttributeValue(VariableUtil.ProjectConfigAttributeTypeName.SCAN_MODE, "")) == VariableUtil.ScanMode.CROSS) {
+            List<com.xcal.api.entity.v3.Issue> issues = this.issueMapperDao.findByScanTaskId(scanTask.getId());
+            List<IssueFile> issueFiles = this.issueFileDao.getIssueFileList(scanTask.getId());
+            Map<Integer, String> issueFileMap = issueFiles.stream().collect(Collectors.toMap(IssueFile::getId, IssueFile::getPath));
+
+            ObjectMapper om = new ObjectMapper();
+            JavaType type = om.getTypeFactory().constructParametricType(List.class, Trace.class);
+
+            for(com.xcal.api.entity.v3.Issue issue: issues) {
+                try {
+                    List<Trace> tracePath = om.readValue(issue.getTracePath(), type);
+                    for(Trace trace: tracePath) {
+                        filePaths.add(issueFileMap.getOrDefault(trace.getFileId(), "").replaceAll("^(\\$[ht])?/", ""));
+                    }
+                } catch (IOException e) {
+                    log.error("[findFilePathContainsIssue] parse issue trace path failed: {}: {}", e.getClass(), e.getMessage());
+                    log.error("[findFilePathContainsIssue] error stack trace info: {}", Arrays.toString(e.getStackTrace()));
+                    // TODO: need to add new error code here
+                    throw new AppException(AppException.LEVEL_ERROR, AppException.ERROR_CODE_INTERNAL_ERROR, HttpURLConnection.HTTP_INTERNAL_ERROR, AppException.ErrorCode.E_API_COMMON_COMMON_INTERNAL_ERROR.unifyErrorCode,
+                            CommonUtil.formatString("[{}]  issue: {}", AppException.ErrorCode.E_API_COMMON_COMMON_INTERNAL_ERROR.messageTemplate, issue.getTracePath()),e);
+                }
+            }
+        }
+
         log.debug("[findFilePathContainsIssue] number of files that contains issue: {}", filePaths.size());
 
         return filePaths;
     }
 
     @Async
-    public void  deleteSourceCodeFileWithoutIssue(ScanTask scanTask, String currentUsername) {
+    public void deleteSourceCodeFileWithoutIssue(ScanTask scanTask, String currentUsername) {
         log.info("[deleteSourceCodeFileWithoutIssue] scanTaskId: {}, currentUsername: {}", scanTask.getId(), currentUsername);
 
         List<ScanFile> scanFiles = scanFileService.findScanFileByScanTaskAndType(scanTask, ScanFile.Type.FILE);
@@ -2984,7 +3000,7 @@ public class IssueService {
 
         Set<String> filePaths = null;
         try {
-            filePaths = this.findFilePathContainsIssue(scanTask.getId());
+            filePaths = this.findFilePathContainsIssue(scanTask);
         } catch (AppException e) {
             log.error("[deleteSourceCodeFileWithoutIssue] find file path contains issue failed: {} {}", e.getErrorCode(), e.getStackTraceString());
             e.printStackTrace();

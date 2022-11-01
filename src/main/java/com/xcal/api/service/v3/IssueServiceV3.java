@@ -16,10 +16,7 @@ package com.xcal.api.service.v3;
 import com.fasterxml.jackson.databind.JavaType;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.xcal.api.config.AppProperties;
-import com.xcal.api.dao.IssueDao;
-import com.xcal.api.dao.IssueFileDao;
-import com.xcal.api.dao.IssueGroupDao;
-import com.xcal.api.dao.ScanTaskDao;
+import com.xcal.api.dao.*;
 import com.xcal.api.entity.Issue.Criticality;
 import com.xcal.api.entity.Project;
 import com.xcal.api.entity.ScanFile;
@@ -32,23 +29,23 @@ import com.xcal.api.model.dto.v3.*;
 import com.xcal.api.model.payload.IssueGroupCountResponse;
 import com.xcal.api.model.payload.IssueGroupCriticalityCountResponse;
 import com.xcal.api.model.payload.SendEmailRequest;
-import com.xcal.api.model.payload.v3.AssignIssueGroupRequest;
-import com.xcal.api.model.payload.v3.SearchIssueGroupRequest;
-import com.xcal.api.model.payload.v3.TopCsvCodeRequest;
+import com.xcal.api.model.payload.v3.*;
 import com.xcal.api.security.UserPrincipal;
 import com.xcal.api.service.*;
 import com.xcal.api.util.CommonUtil;
 import com.xcal.api.util.PathUtil;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang3.EnumUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import org.thymeleaf.util.StringUtils;
 
 import java.net.HttpURLConnection;
 import java.util.*;
@@ -90,6 +87,8 @@ public class IssueServiceV3 {
     private final IssueFileDao issueFileDao;
 
     private final ScanTaskDao scanTaskDao;
+
+    private final IssueValidationDao issueValidationDao;
 
     public Page<IssueGroupDto> searchIssueGroup(
             SearchIssueGroupRequest searchIssueGroupRequest,
@@ -182,6 +181,7 @@ public class IssueServiceV3 {
                 searchIssueGroupRequest.getCertainty(),
                 searchIssueGroupRequest.getDsrType(),
                 searchIssueGroupRequest.getCriticality(),
+                searchIssueGroupRequest.getValidationAction(),
                 searchIssueGroupRequest.getSearchValue(),
                 pageable
         );
@@ -193,8 +193,13 @@ public class IssueServiceV3 {
             }
         }
 
+        // list all issue validations
+        Page<IssueValidation> issueValidationPage = issueValidationDao.listIssueValidations(PageRequest.of(0, Integer.MAX_VALUE));
+        List<IssueValidation> issueValidations = issueValidationPage != null ? issueValidationPage.getContent() : new ArrayList<>();
+        log.info("[getIssueGroup] issueValidation size: {}", issueValidations.size());
+
         return new PageImpl<>(
-                issueGroupList.stream().map(issueGroup -> IssueServiceV3.convertToV3(issueGroup, null, null)).collect(Collectors.toList()),
+                issueGroupList.stream().map(issueGroup -> IssueServiceV3.convertToV3(issueGroup, null, null, issueValidations)).collect(Collectors.toList()),
                 issueGroups.getPageable(),
                 issueGroups.getTotalElements()
         );
@@ -281,6 +286,7 @@ public class IssueServiceV3 {
                 searchIssueGroupRequest.getCertainty(),
                 searchIssueGroupRequest.getDsrType(),
                 searchIssueGroupRequest.getCriticality(),
+                searchIssueGroupRequest.getValidationAction(),
                 searchIssueGroupRequest.getSearchValue(),
                 pageable
         );
@@ -416,7 +422,12 @@ public class IssueServiceV3 {
             fixedCommitId = scanTaskDao.getCommitIdByScanTaskId(fixedScanTaskId).orElse(null);
         }
 
-        return IssueServiceV3.convertToV3(issueGroup, occurCommitId, fixedCommitId);
+        // list all issue validations
+        Page<IssueValidation> issueValidationPage = issueValidationDao.listIssueValidations(PageRequest.of(0, Integer.MAX_VALUE));
+        List<IssueValidation> issueValidations = issueValidationPage != null ? issueValidationPage.getContent() : new ArrayList<>();
+        log.info("[getIssueGroup] issueValidation size: {}", issueValidations.size());
+
+        return IssueServiceV3.convertToV3(issueGroup, occurCommitId, fixedCommitId, issueValidations);
     }
 
     public Page<IssueDto> getIssueList(
@@ -630,6 +641,7 @@ public class IssueServiceV3 {
                 searchIssueGroupRequest.getDsrType(),
                 searchIssueGroupRequest.getCriticality(),
                 null,
+                searchIssueGroupRequest.getValidationAction(),
                 searchIssueGroupRequest.getSearchValue()
         );
 
@@ -757,6 +769,7 @@ public class IssueServiceV3 {
                 searchIssueGroupRequest.getDsrType(),
                 searchIssueGroupRequest.getCriticality(),
                 null,
+                searchIssueGroupRequest.getValidationAction(),
                 searchIssueGroupRequest.getSearchValue()
 
         );
@@ -774,6 +787,7 @@ public class IssueServiceV3 {
                 searchIssueGroupRequest.getDsrType(),
                 searchIssueGroupRequest.getCriticality(),
                 null,
+                searchIssueGroupRequest.getValidationAction(),
                 searchIssueGroupRequest.getSearchValue()
         );
 
@@ -813,7 +827,27 @@ public class IssueServiceV3 {
         return issueGroupCountDsrRow;
     }
 
-    private static IssueGroupDto convertToV3(IssueGroup issueGroup, String occurCommitId, String fixedCommitId) {
+    private static IssueGroupDto.Validation convertToIssueGroupDtoValidation(IssueValidation issueValidation) {
+        return IssueGroupDto.Validation.builder()
+                .id(issueValidation.getId())
+                .projectId(issueValidation.getProjectId())
+                .scanTaskId(issueValidation.getScanTaskId())
+                .ruleCode(issueValidation.getRuleCode())
+                .filePath(issueValidation.getFilePath())
+                .functionName(issueValidation.getFunctionName())
+                .variableName(issueValidation.getVariableName())
+                .lineNumber(issueValidation.getLineNumber())
+                .type(issueValidation.getType().toString())
+                .action(issueValidation.getAction().toString())
+                .scope(issueValidation.getScope().toString())
+                .createdBy(issueValidation.getCreatedBy())
+                .createdOn(issueValidation.getCreatedOn())
+                .modifiedBy(issueValidation.getModifiedBy())
+                .modifiedOn(issueValidation.getModifiedOn())
+                .build();
+    }
+
+    private static IssueGroupDto convertToV3(IssueGroup issueGroup, String occurCommitId, String fixedCommitId, List<IssueValidation> issueValidations) {
         if (issueGroup != null) {
             String srcPathCategory = "";
             try {
@@ -833,6 +867,61 @@ public class IssueServiceV3 {
                 log.warn("[convertToV3]Unexpected prefix while converting Issue Group: {}", e.getMessage());
             }
 
+            String srcRelativePath = Optional.ofNullable(issueGroup.getSrcRelativePath())
+                    .map(path -> path.replaceAll("^(\\$[ht])?/", ""))
+                    .orElse(null);
+            String sinkRelativePath = Optional.ofNullable(issueGroup.getSinkRelativePath())
+                    .map(path -> path.replaceAll("^(\\$[ht])?/", ""))
+                    .orElse(null);
+
+            String filePath = srcRelativePath;
+            if(StringUtils.isNotBlank(sinkRelativePath)) {
+                filePath = sinkRelativePath;
+            }
+
+            List<IssueGroupDto.Validation> matchValidations = new ArrayList<>();
+            int issueGroupHashValue;
+            int validationHashValue;
+            String issueGroupKey = "#";
+            String validationKey = "#";
+            for(IssueValidation issueValidation: issueValidations) {
+                if(StringUtils.isNotBlank(issueValidation.getRuleCode())) {
+                    issueGroupKey = issueGroup.getRuleCode() + "#";
+                    validationKey = issueValidation.getRuleCode() + "#";
+                }
+                if(StringUtils.isNotBlank(issueValidation.getFilePath())) {
+                    issueGroupKey += filePath + "#";
+                    validationKey += issueValidation.getFilePath() + "#";
+                }
+                if(StringUtils.isNotBlank(issueValidation.getFunctionName())) {
+                    issueGroupKey += issueGroup.getFunctionName() + "#";
+                    validationKey += issueValidation.getFunctionName() + "#";
+                }
+                if(StringUtils.isNotBlank(issueValidation.getVariableName())) {
+                    issueGroupKey += issueGroup.getVariableName() + "#";
+                    validationKey += issueValidation.getVariableName() + "#";
+                }
+                if(issueValidation.getLineNumber() != null) {
+                    Integer lineNumber = issueGroup.getSrcLineNo();
+                    if(issueGroup.getSinkLineNo() != 0) {
+                        lineNumber = issueGroup.getSinkLineNo();
+                    }
+                    issueGroupKey += lineNumber.toString() + "#";
+                    validationKey += issueValidation.getLineNumber().toString() + "#";
+                }
+
+                if(StringUtils.equals(issueGroupKey, "#") && StringUtils.equals(validationKey, "#")) {
+                    log.error("[convertToV3]at least one of rule code/file path/function name/variable name/line number must be provided: {}", issueValidation);
+                    continue;
+                }
+
+                issueGroupHashValue = issueGroupKey.hashCode();
+                validationHashValue = validationKey.hashCode();
+                if(issueGroupHashValue == validationHashValue) {
+                    matchValidations.add(convertToIssueGroupDtoValidation(issueValidation));
+                }
+            }
+
             return IssueGroupDto.builder()
                     .id(issueGroup.getId())
                     .projectId(issueGroup.getProjectId())
@@ -844,17 +933,13 @@ public class IssueServiceV3 {
                     .ruleSet(issueGroup.getRuleSet())
                     .srcPathCategory(srcPathCategory)
                     .srcFilePath(issueGroup.getSrcFilePath())
-                    .srcRelativePath(Optional.ofNullable(issueGroup.getSrcRelativePath())
-                            .map(path -> path.replaceAll("^(\\$[ht])?/", ""))
-                            .orElse(null))
+                    .srcRelativePath(srcRelativePath)
                     .srcLineNo(issueGroup.getSrcLineNo())
                     .srcColumnNo(issueGroup.getSrcColumnNo())
                     .srcMessageId(issueGroup.getSrcMessageId())
                     .sinkPathCategory(sinkPathCategory)
                     .sinkFilePath(issueGroup.getSinkFilePath())
-                    .sinkRelativePath(Optional.ofNullable(issueGroup.getSinkRelativePath())
-                            .map(path -> path.replaceAll("^(\\$[ht])?/", ""))
-                            .orElse(null))
+                    .sinkRelativePath(sinkRelativePath)
                     .sinkLineNo(issueGroup.getSinkLineNo())
                     .sinkColumnNo(issueGroup.getSinkColumnNo())
                     .sinkMessageId(issueGroup.getSinkMessageId())
@@ -877,6 +962,7 @@ public class IssueServiceV3 {
                     .assigneeId(issueGroup.getAssigneeId())
                     .assigneeDisplayName(issueGroup.getAssigneeDisplayName())
                     .assigneeEmail(issueGroup.getAssigneeEmail())
+                    .validations(matchValidations)
                     .build();
         }
         return null;
@@ -929,5 +1015,62 @@ public class IssueServiceV3 {
         }
         return null;
     }
+
+    public  IssueValidation addIssueValidation(AddIssueValidationRequest addIssueValidationRequest, String username) {
+        log.info("[addIssueValidation] addIssueValidationRequest: {}, username: {}", addIssueValidationRequest, username);
+        Date now = new Date();
+        IssueValidation issueValidation = IssueValidation.builder()
+                .id(UUID.randomUUID())
+                .projectId(addIssueValidationRequest.getProjectId())
+                .scanTaskId(addIssueValidationRequest.getScanTaskId())
+                .ruleCode(StringUtils.isNotBlank(addIssueValidationRequest.getRuleCode()) ? addIssueValidationRequest.getRuleCode(): null)
+                .filePath(StringUtils.isNotBlank(addIssueValidationRequest.getFilePath()) ? addIssueValidationRequest.getFilePath(): null)
+                .functionName(StringUtils.isNotBlank(addIssueValidationRequest.getFunctionName()) ? addIssueValidationRequest.getFunctionName(): null)
+                .variableName(StringUtils.isNotBlank(addIssueValidationRequest.getVariableName()) ? addIssueValidationRequest.getVariableName(): null)
+                .lineNumber(addIssueValidationRequest.getLineNumber())
+                .type(EnumUtils.getEnumIgnoreCase(IssueValidation.Type.class, addIssueValidationRequest.getType()))
+                .action(EnumUtils.getEnumIgnoreCase(IssueValidation.Action.class, addIssueValidationRequest.getAction()))
+                .scope(EnumUtils.getEnumIgnoreCase(IssueValidation.Scope.class, addIssueValidationRequest.getScope()))
+                .createdBy(username)
+                .createdOn(now)
+                .modifiedBy(username)
+                .modifiedOn(now)
+                .build();
+
+        issueValidationDao.addIssueValidation(issueValidation);
+
+        return issueValidation;
+    }
+
+    public Page<IssueValidation> listIssueValidations(Pageable pageable, String username) {
+        log.info("[listIssueValidations] pageable: {}, username: {}", pageable, username);
+        return issueValidationDao.listIssueValidations(pageable);
+    }
+
+    public IssueValidation updateIssueValidation(UUID id, UpdateIssueValidationRequest updateIssueValidationRequest, String username) {
+        log.info("[updateIssueValidation] id: {}, updateIssueValidationRequest: {}, username: {}", id, updateIssueValidationRequest, username);
+        IssueValidation issueValidation = issueValidationDao.findIssueValidationById(id);
+        if(StringUtils.isNotBlank(updateIssueValidationRequest.getAction())) {
+            issueValidation.setAction(EnumUtils.getEnumIgnoreCase(IssueValidation.Action.class, updateIssueValidationRequest.getAction()));
+        }
+        if(StringUtils.isNotBlank(updateIssueValidationRequest.getScope())) {
+            issueValidation.setScope(EnumUtils.getEnumIgnoreCase(IssueValidation.Scope.class, updateIssueValidationRequest.getScope()));
+        }
+        issueValidation.setModifiedBy(username);
+        issueValidation.setModifiedOn(new Date());
+        issueValidationDao.updateIssueValidation(issueValidation);
+        return issueValidation;
+    }
+
+    public void deleteIssueValidation(UUID id, String username) {
+        log.info("[deleteIssueValidation] id: {}, username: {}", id, username);
+        issueValidationDao.deleteIssueValidationById(id);
+    }
+
+    public Page<IssueValidation> searchIssueValidations(SearchIssueValidationRequest searchIssueValidationRequest, Pageable pageable, String username) {
+        log.info("[searchIssueValidations] searchIssueValidationRequest: {}, pageable: {}, username: {}", searchIssueValidationRequest, pageable, username);
+        return issueValidationDao.searchIssueValidations(searchIssueValidationRequest.getType(), searchIssueValidationRequest.getAction(), searchIssueValidationRequest.getScope(), pageable);
+    }
+
 
 }

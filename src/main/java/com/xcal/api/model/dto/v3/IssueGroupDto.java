@@ -20,6 +20,7 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 import java.util.Date;
+import java.util.List;
 import java.util.UUID;
 
 @Data
@@ -107,4 +108,27 @@ public class IssueGroupDto {
 
     private String assigneeEmail;
 
+    private List<Validation> validations;
+
+    @Data
+    @Builder
+    @AllArgsConstructor
+    @NoArgsConstructor
+    public static class Validation {
+        UUID id;
+        UUID projectId;
+        UUID scanTaskId;
+        String ruleCode;
+        String filePath;
+        String functionName;
+        String variableName;
+        Integer lineNumber;
+        String type;
+        String action;
+        String scope;
+        String createdBy;
+        Date createdOn;
+        String modifiedBy;
+        Date modifiedOn;
+    }
 }

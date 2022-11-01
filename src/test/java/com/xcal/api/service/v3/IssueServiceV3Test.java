@@ -14,10 +14,7 @@
 package com.xcal.api.service.v3;
 
 import com.xcal.api.config.AppProperties;
-import com.xcal.api.dao.IssueDao;
-import com.xcal.api.dao.IssueFileDao;
-import com.xcal.api.dao.IssueGroupDao;
-import com.xcal.api.dao.ScanTaskDao;
+import com.xcal.api.dao.*;
 import com.xcal.api.entity.*;
 import com.xcal.api.entity.v3.Issue;
 import com.xcal.api.entity.v3.IssueGroup;
@@ -78,6 +75,8 @@ public class IssueServiceV3Test {
 
     private ScanTaskDao scanTaskDao;
 
+    private IssueValidationDao issueValidationDao;
+
     private Project project;
 
     private ScanTask scanTask;
@@ -101,6 +100,7 @@ public class IssueServiceV3Test {
         this.issueDao = mock(IssueDao.class);
         this.issueFileDao = mock(IssueFileDao.class);
         this.scanTaskDao = mock(ScanTaskDao.class);
+        this.issueValidationDao = mock(IssueValidationDao.class);
         this.issueService = new IssueServiceV3(
                 this.userService,
                 this.projectService,
@@ -112,7 +112,8 @@ public class IssueServiceV3Test {
                 this.issueGroupDao,
                 this.issueDao,
                 this.issueFileDao,
-                this.scanTaskDao
+                this.scanTaskDao,
+                this.issueValidationDao
         );
         this.project = Project.builder().id(UUID.randomUUID()).build();
         this.scanTask = ScanTask.builder().id(UUID.randomUUID()).project(this.project).build();
@@ -120,6 +121,8 @@ public class IssueServiceV3Test {
                 .id("AAAAA00001")
                 .projectId(this.project.getId())
                 .occurScanTaskId(this.scanTask.getId())
+                .srcLineNo(0)
+                .sinkLineNo(0)
                 .build();
         this.issue = Issue.builder()
                 .id(UUID.randomUUID())
@@ -206,6 +209,7 @@ public class IssueServiceV3Test {
                 null,
                 null,
                 null,
+                null,
                 pageable)
         ).thenReturn(new PageImpl<>(
                 Collections.singletonList(this.issueGroup),
@@ -234,6 +238,7 @@ public class IssueServiceV3Test {
                 null,
                 null,
                 Collections.singletonList("/"),
+                null,
                 null,
                 null,
                 null,
@@ -285,6 +290,7 @@ public class IssueServiceV3Test {
                 null,
                 null,
                 Collections.singletonList("/"),
+                null,
                 null,
                 null,
                 null,
@@ -389,11 +395,13 @@ public class IssueServiceV3Test {
                 isNull(),
                 isNull(),
                 isNull(),
+                isNull(),
                 isNull()
         )).thenReturn(new ArrayList<>());
         when(issueGroupDao.getIssueGroupCountWithFilter(
                 eq(IssueGroupDao.FILTER_CATEGORY_RULE_CODE),
                 any(UUID.class),
+                isNull(),
                 isNull(),
                 isNull(),
                 isNull(),
@@ -433,11 +441,13 @@ public class IssueServiceV3Test {
                 isNull(),
                 isNull(),
                 isNull(),
+                isNull(),
                 isNull()
         )).thenReturn(Collections.singletonList(IssueGroupCountRow.builder().certainty("D").count("100").build()));
         when(issueGroupDao.getIssueGroupCountWithFilter(
                 eq(IssueGroupDao.FILTER_CATEGORY_RULE_CODE),
                 any(UUID.class),
+                isNull(),
                 isNull(),
                 isNull(),
                 isNull(),
@@ -477,6 +487,7 @@ public class IssueServiceV3Test {
                 isNull(),
                 isNull(),
                 isNull(),
+                isNull(),
                 isNull()
         )).thenReturn(new ArrayList<>());
 
@@ -496,6 +507,7 @@ public class IssueServiceV3Test {
         when(issueGroupDao.getIssueGroupCountWithFilter(
                 eq(IssueGroupDao.FILTER_CATEGORY_CRITICALITY),
                 any(UUID.class),
+                isNull(),
                 isNull(),
                 isNull(),
                 isNull(),
@@ -610,8 +622,6 @@ public class IssueServiceV3Test {
         issueService.fillDefaultValueForEmptyMap(searchIssueGroupRequest, criticalityRuleCodeMap);
         assertEquals(1,criticalityRuleCodeMap.size());
         assertTrue(criticalityRuleCodeMap.containsKey("LOW"));
-
-
     }
 
     @Test

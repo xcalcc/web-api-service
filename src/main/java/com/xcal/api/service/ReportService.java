@@ -792,7 +792,6 @@ public class ReportService {
                     }
                 }
 
-
                 long newCount = issueGroupMapper.getIssueGroupCount(
                         reportRequest.getProjectId(),
                         reportRequest.getScanTaskId(),
@@ -803,6 +802,7 @@ public class ReportService {
                         reportRequest.getCertainty(),
                         Arrays.asList("N"),
                         reportRequest.getCriticality(),
+                        reportRequest.getValidationAction(),
                         StringUtil.splitAndTrim(reportRequest.getSearchValue(),SEARCH_VAL_DELIMITER)
                 );
 
@@ -816,6 +816,7 @@ public class ReportService {
                         reportRequest.getCertainty(),
                         Arrays.asList("F"),
                         reportRequest.getCriticality(),
+                        reportRequest.getValidationAction(),
                         StringUtil.splitAndTrim(reportRequest.getSearchValue(),SEARCH_VAL_DELIMITER)
                 );
 
@@ -914,6 +915,7 @@ public class ReportService {
                     searchIssueGroupRequest.getCertainty(),
                     dsrFilter,
                     searchIssueGroupRequest.getCriticality(),
+                    searchIssueGroupRequest.getValidationAction(),
                     searchIssueGroupRequest.getSearchValue(),
                     offset,
                     DEFAULT_PAGE_SIZE
@@ -1067,6 +1069,7 @@ public class ReportService {
                 searchIssueGroupRequest.getDsrType(),
                 searchIssueGroupRequest.getCriticality(),
                 null,
+                searchIssueGroupRequest.getValidationAction(),
                 searchIssueGroupRequest.getSearchValue());
         ReportPDFResponse.IssueCountGroupByCriticality groupByCriticality = getIssueCountGroupByCriticality(groupByCriticalityList);
 
@@ -1113,6 +1116,7 @@ public class ReportService {
                 searchIssueGroupRequest.getDsrType(),
                 searchIssueGroupRequest.getCriticality(),
                 true,
+                searchIssueGroupRequest.getValidationAction(),
                 searchIssueGroupRequest.getSearchValue());
         Map<String, ReportAssigneeStatisticRow> reportAssigneeStatisticRowMap = getReportAssigneeStatisticRowMap(assignedCountRows);
 
@@ -1157,6 +1161,7 @@ public class ReportService {
                 searchIssueGroupRequest.getDsrType(),
                 searchIssueGroupRequest.getCriticality(),
                 true,
+                searchIssueGroupRequest.getValidationAction(),
                 searchIssueGroupRequest.getSearchValue()
         );
         for (ReportFileStatisticRow reportFileStatisticRow : reportFileStatisticRowList) {
@@ -1295,6 +1300,7 @@ public class ReportService {
                 searchIssueGroupRequest.getDsrType(),
                 criticality,
                 assigned,
+                searchIssueGroupRequest.getValidationAction(),
                 searchIssueGroupRequest.getSearchValue()
         );
 

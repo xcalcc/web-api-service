@@ -442,6 +442,7 @@ public class MeasureService {
                 searchIssueGroupRequest.getDsrType(),
                 searchIssueGroupRequest.getCriticality(),
                 null,
+                searchIssueGroupRequest.getValidationAction(),
                 searchIssueGroupRequest.getSearchValue());
         ReportPDFResponse.IssueCountGroupByCriticality groupByCriticality = ReportService.getIssueCountGroupByCriticality(groupByCriticalityList);
         log.info("[getIssueCountGroupByCriticality] result groupByCriticality:{}", groupByCriticality);
@@ -462,6 +463,7 @@ public class MeasureService {
                 searchIssueGroupRequest.getDsrType(),
                 searchIssueGroupRequest.getCriticality(),
                 null,
+                searchIssueGroupRequest.getValidationAction(),
                 searchIssueGroupRequest.getSearchValue()
 
         );
@@ -486,6 +488,7 @@ public class MeasureService {
                 searchIssueGroupRequest.getDsrType(),
                 searchIssueGroupRequest.getCriticality(),
                 null,
+                searchIssueGroupRequest.getValidationAction(),
                 searchIssueGroupRequest.getSearchValue()
         );
 

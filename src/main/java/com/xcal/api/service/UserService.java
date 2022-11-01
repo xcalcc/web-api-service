@@ -735,6 +735,7 @@ public class UserService {
                                                String certainty,
                                                List<String> dsrType,
                                                String criticality,
+                                               String validationAction,
                                                String searchValue,
                                                Pageable pageable) {
         return userDao.getTopAssignees(
@@ -747,6 +748,7 @@ public class UserService {
                 certainty,
                 dsrType,
                 criticality,
+                validationAction,
                 searchValue,
                 pageable
         );

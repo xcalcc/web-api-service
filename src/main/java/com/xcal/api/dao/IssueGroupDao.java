@@ -15,6 +15,7 @@ package com.xcal.api.dao;
 
 import com.xcal.api.entity.v3.IssueGroup;
 import com.xcal.api.entity.v3.IssueGroupCountRow;
+import com.xcal.api.entity.v3.IssueGroupSrcSinkFilePath;
 import com.xcal.api.entity.v3.ReportFileStatisticRow;
 import com.xcal.api.model.dto.v3.SearchIssueSuggestionDto;
 import com.xcal.api.model.payload.v3.SearchIssueGroupRequest;
@@ -45,6 +46,7 @@ public interface IssueGroupDao {
             String certainty,
             List<String> dsrType,
             String criticality,
+            String validationAction,
             String searchValue,
             Pageable pageable
     );
@@ -61,6 +63,7 @@ public interface IssueGroupDao {
             String certainty,
             List<String> dsrType,
             String criticality,
+            String validationAction,
             String searchValue,
             Pageable pageable
     );
@@ -75,11 +78,13 @@ public interface IssueGroupDao {
             String certainty,
             List<String> dsrType,
             String criticality,
+            String validationAction,
             String searchValue,
             int offset,
             int limit
     );
 
+    List<IssueGroupSrcSinkFilePath> getIssueGroupSrcSinkFilePathListByScanTaskId(UUID scanTaskId);
 
     List<IssueGroup> getIssueGroupList(UUID projectId, List<String> ruleSets, int offset, int limit);
 
@@ -131,6 +136,7 @@ public interface IssueGroupDao {
             List<String> dsrType,
             String criticality,
             Boolean assigned,
+            String validationAction,
             String searchValue
     );
 
@@ -146,6 +152,7 @@ public interface IssueGroupDao {
             List<String> dsrType,
             String criticality,
             Boolean assigned,
+            String validationAction,
             String searchValue
     );
 
@@ -162,6 +169,7 @@ public interface IssueGroupDao {
             List<String> dsrType,
             String criticality,
             Boolean assigned,
+            String validationAction,
             String searchValue
     );
 

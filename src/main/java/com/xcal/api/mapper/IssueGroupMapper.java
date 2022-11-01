@@ -15,6 +15,7 @@ package com.xcal.api.mapper;
 
 import com.xcal.api.entity.v3.IssueGroup;
 import com.xcal.api.entity.v3.IssueGroupCountRow;
+import com.xcal.api.entity.v3.IssueGroupSrcSinkFilePath;
 import com.xcal.api.entity.v3.ReportFileStatisticRow;
 import com.xcal.api.model.dto.v3.SearchIssueSuggestionDto;
 import com.xcal.api.model.payload.v3.SearchIssueGroupRequest;
@@ -38,6 +39,7 @@ public interface IssueGroupMapper {
      * @param certainty
      * @param dsrType
      * @param criticality
+     * @param validationAction
      * @param searchValues
      * @param offset
      * @param limit
@@ -53,10 +55,13 @@ public interface IssueGroupMapper {
             @Param("certainty") String certainty,
             @Param("dsrType") List<String> dsrType,
             @Param("criticality") String criticality,
+            @Param("validationAction") String validationAction,
             @Param("searchValues") List<String> searchValues,
             @Param("offset") int offset,
             @Param("limit") int limit
     );
+
+    List<IssueGroupSrcSinkFilePath> getIssueGroupSrcSinkFilePathListByScanTaskId(@Param("scanTaskId") UUID scanTaskId);
 
     long getIssueGroupCount(
             @Param("projectId") UUID projectId,
@@ -68,6 +73,7 @@ public interface IssueGroupMapper {
             @Param("certainty") String certainty,
             @Param("dsrType") List<String> dsrType,
             @Param("criticality") String criticality,
+            @Param("validationAction") String validationAction,
             @Param("searchValues") List<String> searchValues
     );
 
@@ -81,6 +87,7 @@ public interface IssueGroupMapper {
             @Param("certainty") String certainty,
             @Param("dsrType") List<String> dsrType,
             @Param("criticality") String criticality,
+            @Param("validationAction") String validationAction,
             @Param("searchValues") List<String> searchValues,
             @Param("offset") int offset,
             @Param("limit") int limit
@@ -96,6 +103,7 @@ public interface IssueGroupMapper {
             @Param("certainty") String certainty,
             @Param("dsrType") List<String> dsrType,
             @Param("criticality") String criticality,
+            @Param("validationAction") String validationAction,
             @Param("searchValues") List<String> searchValues
     );
 
@@ -145,6 +153,7 @@ public interface IssueGroupMapper {
             @Param("dsrType") List<String> dsrType,
             @Param("criticality") String criticality,
             @Param("assigned") Boolean assigned,
+            @Param("validationAction") String validationAction,
             @Param("searchValues") List<String> searchValues
     );
 
@@ -160,6 +169,7 @@ public interface IssueGroupMapper {
             @Param("dsrType") List<String> dsrType,
             @Param("criticality") String criticality,
             @Param("assigned") Boolean assigned,
+            @Param("validationAction") String validationAction,
             @Param("searchValues") List<String> searchValues
     );
 
@@ -183,6 +193,7 @@ public interface IssueGroupMapper {
             @Param("dsrType") List<String> dsrType,
             @Param("criticality") String criticality,
             @Param("assigned") Boolean assigned,
+            @Param("validationAction") String validationAction,
             @Param("searchValues") List<String> searchValues
     );
 

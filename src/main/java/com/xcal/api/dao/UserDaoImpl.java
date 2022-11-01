@@ -48,6 +48,7 @@ public class UserDaoImpl extends SqlSessionDaoSupport implements UserDao {
             List<String> dsrType,
             String criticality,
             String searchValue,
+            String validationAction,
             Pageable pageable
     ) {
         UserMapper mapper = this.getSqlSession().getMapper(UserMapper.class);
@@ -61,6 +62,7 @@ public class UserDaoImpl extends SqlSessionDaoSupport implements UserDao {
                 certainty,
                 dsrType,
                 criticality,
+                validationAction,
                 StringUtil.splitAndTrim(searchValue,SEARCH_VAL_DELIMITER),
                 pageable.getPageNumber() * pageable.getPageSize(),
                 pageable.getPageSize()
@@ -93,6 +95,7 @@ public class UserDaoImpl extends SqlSessionDaoSupport implements UserDao {
             List<String> dsrType,
             String criticality,
             Boolean assigned,
+            String validationAction,
             String searchValue
     ) {
         UserMapper mapper = this.getSqlSession().getMapper(UserMapper.class);
@@ -107,6 +110,7 @@ public class UserDaoImpl extends SqlSessionDaoSupport implements UserDao {
                 dsrType,
                 criticality,
                 assigned,
+                validationAction,
                 StringUtil.splitAndTrim(searchValue,SEARCH_VAL_DELIMITER)
         );
     }

@@ -84,8 +84,25 @@
         <result property="low" column="low_count" jdbcType="INTEGER"/>
     </resultMap>
 
-    <select id="getIssueGroupList" resultMap="issueGroup">
+    <resultMap id="IssueGroupSrcSinkFilePath" type="com.xcal.api.entity.v3.IssueGroupSrcSinkFilePath">
+        <id property="id" column="id" jdbcType="VARCHAR"/>
+        <result property="srcRelativePath" column="src_relative_path" jdbcType="VARCHAR"/>
+        <result property="sinkRelativePath" column="sink_relative_path" jdbcType="VARCHAR"/>
+    </resultMap>
+
+    <select id="getIssueGroupSrcSinkFilePathListByScanTaskId" resultMap="IssueGroupSrcSinkFilePath">
         select
+        t.id as id,
+        f1.path as src_relative_path,
+        f2.path as sink_relative_path
+        from "issue_group" as t
+        left join "issue_file" as f1 on f1.id = t.src_file_path_id and f1.scan_task_id = t.scan_task_id
+        left join "issue_file" as f2 on f2.id = t.sink_file_path_id and f2.scan_task_id = t.scan_task_id
+        where t.scan_task_id = #{scanTaskId, jdbcType=OTHER, typeHandler=com.xcal.api.config.UUIDTypeHandler}::uuid
+    </select>
+
+    <select id="getIssueGroupList" resultMap="issueGroup">
+        select distinct
         t.id as id,
         t.project_id as project_id,
         t.occur_scan_task_id as occur_scan_task_id,
@@ -127,7 +144,8 @@
         t.fixed_time as fixed_time,
         u.id as assignee_id,
         u.display_name as assignee_display_name,
-        u.email as assignee_email
+        u.email as assignee_email,
+        rc.issue_group_count
         from "issue_group" as t
         left join "issue_file" as f1 on f1.id = t.src_file_path_id and f1.scan_task_id = t.scan_task_id
         left join "issue_file" as f2 on f2.id = t.sink_file_path_id and f2.scan_task_id = t.scan_task_id
@@ -140,7 +158,37 @@
         <if test="scanTaskId != null">
             left join scan_task st on t.scan_task_id=st.id
         </if>
+        <if test="validationAction != null">
+            <if test='validationAction == "IGNORE"'>
+                inner join issue_validation as iv on iv.action = 'IGNORE' and (
+            </if>
+            <if test='validationAction != "IGNORE"'>
+                left join issue_validation as iv on iv.action = 'IGNORE' and (
+            </if>
+                (t.rule_code = iv.rule_code and iv.file_path is null and iv.function_name is null and iv.variable_name is null and iv.line_number is null) or
+                ((f2.path like CONCAT('%', iv.file_path, '%') or f1.path like CONCAT('%', iv.file_path, '%')) and iv.rule_code is null and iv.function_name is null and iv.variable_name is null and iv.line_number is null) or
+                (fs.str = iv.function_name and iv.rule_code is null and iv.file_path is null and iv.variable_name is null and iv.line_number is null) or
+
+                (t.rule_code = iv.rule_code and (f2.path like CONCAT('%', iv.file_path, '%') or f1.path like CONCAT('%', iv.file_path, '%')) and iv.function_name is null and iv.variable_name is null and iv.line_number is null) or
+                (t.rule_code = iv.rule_code and fs.str = iv.function_name and iv.file_path is null and iv.variable_name is null and iv.line_number is null) or
+                (t.rule_code = iv.rule_code and vs.str = iv.variable_name and iv.file_path is null and iv.function_name is null and iv.line_number is null) or
+                ((f2.path like CONCAT('%', iv.file_path, '%') or f1.path like CONCAT('%', iv.file_path, '%')) and fs.str = iv.function_name and iv.rule_code is null and iv.variable_name is null and iv.line_number is null) or
+                ((f2.path like CONCAT('%', iv.file_path, '%') or f1.path like CONCAT('%', iv.file_path, '%')) and vs.str = iv.variable_name and iv.rule_code is null and iv.function_name is null and iv.line_number is null) or
+                (fs.str = iv.function_name and vs.str = iv.variable_name and iv.rule_code is null and iv.file_path is null and iv.line_number is null) or
+
+                (t.rule_code = iv.rule_code and (f2.path like CONCAT('%', iv.file_path, '%') or f1.path like CONCAT('%', iv.file_path, '%')) and fs.str = iv.function_name and iv.variable_name is null and iv.line_number is null) or
+                (t.rule_code = iv.rule_code and (f2.path like CONCAT('%', iv.file_path, '%') or f1.path like CONCAT('%', iv.file_path, '%')) and vs.str = iv.variable_name and iv.function_name is null and iv.line_number is null) or
+                ((f2.path like CONCAT('%', iv.file_path, '%') or f1.path like CONCAT('%', iv.file_path, '%')) and fs.str = iv.function_name and vs.str = iv.variable_name and iv.rule_code is null and iv.line_number is null) or
+
+                (t.rule_code = iv.rule_code and (f2.path like CONCAT('%', iv.file_path, '%') or f1.path like CONCAT('%', iv.file_path, '%')) and fs.str = iv.function_name and vs.str = iv.variable_name and iv.line_number is null) or
+
+                (t.rule_code = iv.rule_code and (f2.path like CONCAT('%', iv.file_path, '%') or f1.path like CONCAT('%', iv.file_path, '%')) and fs.str = iv.function_name and vs.str = iv.variable_name and (iv.line_number = t.sink_line_no or iv.line_number = t.src_line_no))
+                )
+        </if>
         where t.project_id = #{projectId, jdbcType=OTHER, typeHandler=com.xcal.api.config.UUIDTypeHandler}::uuid
+        <if test='validationAction != null and validationAction != "IGNORE"'>
+            and (iv.action is null or iv.action != 'IGNORE')
+        </if>
         <if test="ruleCodes != null and ruleCodes.size() > 0">
             and
             <foreach collection="ruleCodes" open="(" close=")" separator=" or " item="item">
@@ -278,7 +326,37 @@
         <if test="scanTaskId != null">
             left join scan_task st on t.scan_task_id=st.id
         </if>
+        <if test="validationAction != null">
+            <if test='validationAction == "IGNORE"'>
+                inner join issue_validation as iv on iv.action = 'IGNORE' and (
+            </if>
+            <if test='validationAction != "IGNORE"'>
+                left join issue_validation as iv on iv.action = 'IGNORE' and (
+            </if>
+                (t.rule_code = iv.rule_code and iv.file_path is null and iv.function_name is null and iv.variable_name is null and iv.line_number is null) or
+                ((f2.path like CONCAT('%', iv.file_path, '%') or f1.path like CONCAT('%', iv.file_path, '%')) and iv.rule_code is null and iv.function_name is null and iv.variable_name is null and iv.line_number is null) or
+                (fs.str = iv.function_name and iv.rule_code is null and iv.file_path is null and iv.variable_name is null and iv.line_number is null) or
+
+                (t.rule_code = iv.rule_code and (f2.path like CONCAT('%', iv.file_path, '%') or f1.path like CONCAT('%', iv.file_path, '%')) and iv.function_name is null and iv.variable_name is null and iv.line_number is null) or
+                (t.rule_code = iv.rule_code and fs.str = iv.function_name and iv.file_path is null and iv.variable_name is null and iv.line_number is null) or
+                (t.rule_code = iv.rule_code and vs.str = iv.variable_name and iv.file_path is null and iv.function_name is null and iv.line_number is null) or
+                ((f2.path like CONCAT('%', iv.file_path, '%') or f1.path like CONCAT('%', iv.file_path, '%')) and fs.str = iv.function_name and iv.rule_code is null and iv.variable_name is null and iv.line_number is null) or
+                ((f2.path like CONCAT('%', iv.file_path, '%') or f1.path like CONCAT('%', iv.file_path, '%')) and vs.str = iv.variable_name and iv.rule_code is null and iv.function_name is null and iv.line_number is null) or
+                (fs.str = iv.function_name and vs.str = iv.variable_name and iv.rule_code is null and iv.file_path is null and iv.line_number is null) or
+
+                (t.rule_code = iv.rule_code and (f2.path like CONCAT('%', iv.file_path, '%') or f1.path like CONCAT('%', iv.file_path, '%')) and fs.str = iv.function_name and iv.variable_name is null and iv.line_number is null) or
+                (t.rule_code = iv.rule_code and (f2.path like CONCAT('%', iv.file_path, '%') or f1.path like CONCAT('%', iv.file_path, '%')) and vs.str = iv.variable_name and iv.function_name is null and iv.line_number is null) or
+                ((f2.path like CONCAT('%', iv.file_path, '%') or f1.path like CONCAT('%', iv.file_path, '%')) and fs.str = iv.function_name and vs.str = iv.variable_name and iv.rule_code is null and iv.line_number is null) or
+
+                (t.rule_code = iv.rule_code and (f2.path like CONCAT('%', iv.file_path, '%') or f1.path like CONCAT('%', iv.file_path, '%')) and fs.str = iv.function_name and vs.str = iv.variable_name and iv.line_number is null) or
+
+                (t.rule_code = iv.rule_code and (f2.path like CONCAT('%', iv.file_path, '%') or f1.path like CONCAT('%', iv.file_path, '%')) and fs.str = iv.function_name and vs.str = iv.variable_name and (iv.line_number = t.sink_line_no or iv.line_number = t.src_line_no))
+                )
+        </if>
         where t.project_id = #{projectId, jdbcType=OTHER, typeHandler=com.xcal.api.config.UUIDTypeHandler}::uuid
+        <if test='validationAction != null and validationAction != "IGNORE"'>
+            and (iv.action is null or iv.action != 'IGNORE')
+        </if>
         <if test="ruleCodes != null and ruleCodes.size() > 0">
             and
             <foreach collection="ruleCodes" open="(" close=")" separator=" or " item="item">
@@ -893,7 +971,37 @@
         left join (select rule_code, count(1) as issue_group_count from "issue_group" where project_id =
         #{projectId, jdbcType=OTHER, typeHandler=com.xcal.api.config.UUIDTypeHandler}::uuid group by rule_code) as rc on
         rc.rule_code = t.rule_code
+        <if test="validationAction != null">
+            <if test='validationAction == "IGNORE"'>
+                inner join issue_validation as iv on iv.action = 'IGNORE' and (
+            </if>
+            <if test='validationAction != "IGNORE"'>
+                left join issue_validation as iv on iv.action = 'IGNORE' and (
+            </if>
+            (t.rule_code = iv.rule_code and iv.file_path is null and iv.function_name is null and iv.variable_name is null and iv.line_number is null) or
+            ((f2.path like CONCAT('%', iv.file_path, '%') or f1.path like CONCAT('%', iv.file_path, '%')) and iv.rule_code is null and iv.function_name is null and iv.variable_name is null and iv.line_number is null) or
+            (fs.str = iv.function_name and iv.rule_code is null and iv.file_path is null and iv.variable_name is null and iv.line_number is null) or
+
+            (t.rule_code = iv.rule_code and (f2.path like CONCAT('%', iv.file_path, '%') or f1.path like CONCAT('%', iv.file_path, '%')) and iv.function_name is null and iv.variable_name is null and iv.line_number is null) or
+            (t.rule_code = iv.rule_code and fs.str = iv.function_name and iv.file_path is null and iv.variable_name is null and iv.line_number is null) or
+            (t.rule_code = iv.rule_code and vs.str = iv.variable_name and iv.file_path is null and iv.function_name is null and iv.line_number is null) or
+            ((f2.path like CONCAT('%', iv.file_path, '%') or f1.path like CONCAT('%', iv.file_path, '%')) and fs.str = iv.function_name and iv.rule_code is null and iv.variable_name is null and iv.line_number is null) or
+            ((f2.path like CONCAT('%', iv.file_path, '%') or f1.path like CONCAT('%', iv.file_path, '%')) and vs.str = iv.variable_name and iv.rule_code is null and iv.function_name is null and iv.line_number is null) or
+            (fs.str = iv.function_name and vs.str = iv.variable_name and iv.rule_code is null and iv.file_path is null and iv.line_number is null) or
+
+            (t.rule_code = iv.rule_code and (f2.path like CONCAT('%', iv.file_path, '%') or f1.path like CONCAT('%', iv.file_path, '%')) and fs.str = iv.function_name and iv.variable_name is null and iv.line_number is null) or
+            (t.rule_code = iv.rule_code and (f2.path like CONCAT('%', iv.file_path, '%') or f1.path like CONCAT('%', iv.file_path, '%')) and vs.str = iv.variable_name and iv.function_name is null and iv.line_number is null) or
+            ((f2.path like CONCAT('%', iv.file_path, '%') or f1.path like CONCAT('%', iv.file_path, '%')) and fs.str = iv.function_name and vs.str = iv.variable_name and iv.rule_code is null and iv.line_number is null) or
+
+            (t.rule_code = iv.rule_code and (f2.path like CONCAT('%', iv.file_path, '%') or f1.path like CONCAT('%', iv.file_path, '%')) and fs.str = iv.function_name and vs.str = iv.variable_name and iv.line_number is null) or
+
+            (t.rule_code = iv.rule_code and (f2.path like CONCAT('%', iv.file_path, '%') or f1.path like CONCAT('%', iv.file_path, '%')) and fs.str = iv.function_name and vs.str = iv.variable_name and (iv.line_number = t.sink_line_no or iv.line_number = t.src_line_no))
+            )
+        </if>
         where t.project_id = #{projectId, jdbcType=OTHER, typeHandler=com.xcal.api.config.UUIDTypeHandler}::uuid
+        <if test='validationAction != null and validationAction != "IGNORE"'>
+            and (iv.action is null or iv.action != 'IGNORE')
+        </if>
         <if test="ruleCodes != null and ruleCodes.size() > 0">
             and
             <foreach collection="ruleCodes" open="(" close=")" separator=" or " item="item">
@@ -1028,9 +1136,39 @@
         left join "issue_file" as f2 on f2.id = t.sink_file_path_id and f2.scan_task_id = t.scan_task_id
         left join "issue_string" as fs on fs.id = t.function_name_id and fs.scan_task_id = t.scan_task_id
         left join "issue_string" as vs on vs.id = t.variable_name_id and vs.scan_task_id = t.scan_task_id
+        <if test="validationAction != null">
+            <if test='validationAction == "IGNORE"'>
+                inner join issue_validation as iv on iv.action = 'IGNORE' and (
+            </if>
+            <if test='validationAction != "IGNORE"'>
+                left join issue_validation as iv on iv.action = 'IGNORE' and (
+            </if>
+            (t.rule_code = iv.rule_code and iv.file_path is null and iv.function_name is null and iv.variable_name is null and iv.line_number is null) or
+            ((f2.path like CONCAT('%', iv.file_path, '%') or f1.path like CONCAT('%', iv.file_path, '%')) and iv.rule_code is null and iv.function_name is null and iv.variable_name is null and iv.line_number is null) or
+            (fs.str = iv.function_name and iv.rule_code is null and iv.file_path is null and iv.variable_name is null and iv.line_number is null) or
+
+            (t.rule_code = iv.rule_code and (f2.path like CONCAT('%', iv.file_path, '%') or f1.path like CONCAT('%', iv.file_path, '%')) and iv.function_name is null and iv.variable_name is null and iv.line_number is null) or
+            (t.rule_code = iv.rule_code and fs.str = iv.function_name and iv.file_path is null and iv.variable_name is null and iv.line_number is null) or
+            (t.rule_code = iv.rule_code and vs.str = iv.variable_name and iv.file_path is null and iv.function_name is null and iv.line_number is null) or
+            ((f2.path like CONCAT('%', iv.file_path, '%') or f1.path like CONCAT('%', iv.file_path, '%')) and fs.str = iv.function_name and iv.rule_code is null and iv.variable_name is null and iv.line_number is null) or
+            ((f2.path like CONCAT('%', iv.file_path, '%') or f1.path like CONCAT('%', iv.file_path, '%')) and vs.str = iv.variable_name and iv.rule_code is null and iv.function_name is null and iv.line_number is null) or
+            (fs.str = iv.function_name and vs.str = iv.variable_name and iv.rule_code is null and iv.file_path is null and iv.line_number is null) or
+
+            (t.rule_code = iv.rule_code and (f2.path like CONCAT('%', iv.file_path, '%') or f1.path like CONCAT('%', iv.file_path, '%')) and fs.str = iv.function_name and iv.variable_name is null and iv.line_number is null) or
+            (t.rule_code = iv.rule_code and (f2.path like CONCAT('%', iv.file_path, '%') or f1.path like CONCAT('%', iv.file_path, '%')) and vs.str = iv.variable_name and iv.function_name is null and iv.line_number is null) or
+            ((f2.path like CONCAT('%', iv.file_path, '%') or f1.path like CONCAT('%', iv.file_path, '%')) and fs.str = iv.function_name and vs.str = iv.variable_name and iv.rule_code is null and iv.line_number is null) or
+
+            (t.rule_code = iv.rule_code and (f2.path like CONCAT('%', iv.file_path, '%') or f1.path like CONCAT('%', iv.file_path, '%')) and fs.str = iv.function_name and vs.str = iv.variable_name and iv.line_number is null) or
+
+            (t.rule_code = iv.rule_code and (f2.path like CONCAT('%', iv.file_path, '%') or f1.path like CONCAT('%', iv.file_path, '%')) and fs.str = iv.function_name and vs.str = iv.variable_name and (iv.line_number = t.sink_line_no or iv.line_number = t.src_line_no))
+            )
+        </if>
         <where>
             <if test="projectId!=null">
                 t.project_id = #{projectId, jdbcType=OTHER, typeHandler=com.xcal.api.config.UUIDTypeHandler}::uuid
+            </if>
+            <if test='validationAction != null and validationAction != "IGNORE"'>
+                and (iv.action is null or iv.action != 'IGNORE')
             </if>
             <if test="ruleCodes != null and ruleCodes.size() > 0">
                 and
@@ -1148,13 +1286,13 @@
         group by
         <choose>
             <when test='filterCategory == "CRITICALITY"'>
-                criticality_level, rule_code
+                criticality_level, t.rule_code
             </when>
             <when test='filterCategory == "CERTAINTY"'>
-                certainty
+                t.certainty
             </when>
             <when test='filterCategory == "RULE_CODE"'>
-                rule_code
+                t.rule_code
             </when>
         </choose>
     </select>
@@ -1222,7 +1360,37 @@
             left join (select rule_code, count(1) as issue_group_count from "issue_group" where project_id =
             #{projectId, jdbcType=OTHER, typeHandler=com.xcal.api.config.UUIDTypeHandler}::uuid group by rule_code) as rc on
             rc.rule_code = t.rule_code
+            <if test="validationAction != null">
+                <if test='validationAction == "IGNORE"'>
+                    inner join issue_validation as iv on iv.action = 'IGNORE' and (
+                </if>
+                <if test='validationAction != "IGNORE"'>
+                    left join issue_validation as iv on iv.action = 'IGNORE' and (
+                </if>
+                (t.rule_code = iv.rule_code and iv.file_path is null and iv.function_name is null and iv.variable_name is null and iv.line_number is null) or
+                ((f2.path like CONCAT('%', iv.file_path, '%') or f1.path like CONCAT('%', iv.file_path, '%')) and iv.rule_code is null and iv.function_name is null and iv.variable_name is null and iv.line_number is null) or
+                (fs.str = iv.function_name and iv.rule_code is null and iv.file_path is null and iv.variable_name is null and iv.line_number is null) or
+
+                (t.rule_code = iv.rule_code and (f2.path like CONCAT('%', iv.file_path, '%') or f1.path like CONCAT('%', iv.file_path, '%')) and iv.function_name is null and iv.variable_name is null and iv.line_number is null) or
+                (t.rule_code = iv.rule_code and fs.str = iv.function_name and iv.file_path is null and iv.variable_name is null and iv.line_number is null) or
+                (t.rule_code = iv.rule_code and vs.str = iv.variable_name and iv.file_path is null and iv.function_name is null and iv.line_number is null) or
+                ((f2.path like CONCAT('%', iv.file_path, '%') or f1.path like CONCAT('%', iv.file_path, '%')) and fs.str = iv.function_name and iv.rule_code is null and iv.variable_name is null and iv.line_number is null) or
+                ((f2.path like CONCAT('%', iv.file_path, '%') or f1.path like CONCAT('%', iv.file_path, '%')) and vs.str = iv.variable_name and iv.rule_code is null and iv.function_name is null and iv.line_number is null) or
+                (fs.str = iv.function_name and vs.str = iv.variable_name and iv.rule_code is null and iv.file_path is null and iv.line_number is null) or
+
+                (t.rule_code = iv.rule_code and (f2.path like CONCAT('%', iv.file_path, '%') or f1.path like CONCAT('%', iv.file_path, '%')) and fs.str = iv.function_name and iv.variable_name is null and iv.line_number is null) or
+                (t.rule_code = iv.rule_code and (f2.path like CONCAT('%', iv.file_path, '%') or f1.path like CONCAT('%', iv.file_path, '%')) and vs.str = iv.variable_name and iv.function_name is null and iv.line_number is null) or
+                ((f2.path like CONCAT('%', iv.file_path, '%') or f1.path like CONCAT('%', iv.file_path, '%')) and fs.str = iv.function_name and vs.str = iv.variable_name and iv.rule_code is null and iv.line_number is null) or
+
+                (t.rule_code = iv.rule_code and (f2.path like CONCAT('%', iv.file_path, '%') or f1.path like CONCAT('%', iv.file_path, '%')) and fs.str = iv.function_name and vs.str = iv.variable_name and iv.line_number is null) or
+
+                (t.rule_code = iv.rule_code and (f2.path like CONCAT('%', iv.file_path, '%') or f1.path like CONCAT('%', iv.file_path, '%')) and fs.str = iv.function_name and vs.str = iv.variable_name and (iv.line_number = t.sink_line_no or iv.line_number = t.src_line_no))
+                )
+            </if>
             where t.project_id = #{projectId, jdbcType=OTHER, typeHandler=com.xcal.api.config.UUIDTypeHandler}::uuid
+            <if test='validationAction != null and validationAction != "IGNORE"'>
+                and (iv.action is null or iv.action != 'IGNORE')
+            </if>
             <if test="ruleCodes != null and ruleCodes.size() > 0">
                 and
                 <foreach collection="ruleCodes" open="(" close=")" separator=" or " item="item">
@@ -1351,7 +1519,37 @@
                 left join (select rule_code, count(1) as issue_group_count from "issue_group" where project_id =
                 #{projectId, jdbcType=OTHER, typeHandler=com.xcal.api.config.UUIDTypeHandler}::uuid group by rule_code) as rc on
                 rc.rule_code = t.rule_code
+                <if test="validationAction != null">
+                    <if test='validationAction == "IGNORE"'>
+                        inner join issue_validation as iv on iv.action = 'IGNORE' and (
+                    </if>
+                    <if test='validationAction != "IGNORE"'>
+                        left join issue_validation as iv on iv.action = 'IGNORE' and (
+                    </if>
+                    (t.rule_code = iv.rule_code and iv.file_path is null and iv.function_name is null and iv.variable_name is null and iv.line_number is null) or
+                    ((f2.path like CONCAT('%', iv.file_path, '%') or f1.path like CONCAT('%', iv.file_path, '%')) and iv.rule_code is null and iv.function_name is null and iv.variable_name is null and iv.line_number is null) or
+                    (fs.str = iv.function_name and iv.rule_code is null and iv.file_path is null and iv.variable_name is null and iv.line_number is null) or
+
+                    (t.rule_code = iv.rule_code and (f2.path like CONCAT('%', iv.file_path, '%') or f1.path like CONCAT('%', iv.file_path, '%')) and iv.function_name is null and iv.variable_name is null and iv.line_number is null) or
+                    (t.rule_code = iv.rule_code and fs.str = iv.function_name and iv.file_path is null and iv.variable_name is null and iv.line_number is null) or
+                    (t.rule_code = iv.rule_code and vs.str = iv.variable_name and iv.file_path is null and iv.function_name is null and iv.line_number is null) or
+                    ((f2.path like CONCAT('%', iv.file_path, '%') or f1.path like CONCAT('%', iv.file_path, '%')) and fs.str = iv.function_name and iv.rule_code is null and iv.variable_name is null and iv.line_number is null) or
+                    ((f2.path like CONCAT('%', iv.file_path, '%') or f1.path like CONCAT('%', iv.file_path, '%')) and vs.str = iv.variable_name and iv.rule_code is null and iv.function_name is null and iv.line_number is null) or
+                    (fs.str = iv.function_name and vs.str = iv.variable_name and iv.rule_code is null and iv.file_path is null and iv.line_number is null) or
+
+                    (t.rule_code = iv.rule_code and (f2.path like CONCAT('%', iv.file_path, '%') or f1.path like CONCAT('%', iv.file_path, '%')) and fs.str = iv.function_name and iv.variable_name is null and iv.line_number is null) or
+                    (t.rule_code = iv.rule_code and (f2.path like CONCAT('%', iv.file_path, '%') or f1.path like CONCAT('%', iv.file_path, '%')) and vs.str = iv.variable_name and iv.function_name is null and iv.line_number is null) or
+                    ((f2.path like CONCAT('%', iv.file_path, '%') or f1.path like CONCAT('%', iv.file_path, '%')) and fs.str = iv.function_name and vs.str = iv.variable_name and iv.rule_code is null and iv.line_number is null) or
+
+                    (t.rule_code = iv.rule_code and (f2.path like CONCAT('%', iv.file_path, '%') or f1.path like CONCAT('%', iv.file_path, '%')) and fs.str = iv.function_name and vs.str = iv.variable_name and iv.line_number is null) or
+
+                    (t.rule_code = iv.rule_code and (f2.path like CONCAT('%', iv.file_path, '%') or f1.path like CONCAT('%', iv.file_path, '%')) and fs.str = iv.function_name and vs.str = iv.variable_name and (iv.line_number = t.sink_line_no or iv.line_number = t.src_line_no))
+                    )
+                </if>
             where t.project_id = #{projectId, jdbcType=OTHER, typeHandler=com.xcal.api.config.UUIDTypeHandler}::uuid
+                <if test='validationAction != null and validationAction != "IGNORE"'>
+                    and (iv.action is null or iv.action != 'IGNORE')
+                </if>
                 <if test="ruleCodes != null and ruleCodes.size() > 0">
                     and
                     <foreach collection="ruleCodes" open="(" close=")" separator=" or " item="item">
@@ -1480,7 +1678,37 @@
             left join (select rule_code, count(1) as issue_group_count from "issue_group" where project_id =
             #{projectId, jdbcType=OTHER, typeHandler=com.xcal.api.config.UUIDTypeHandler}::uuid group by rule_code) as rc on
             rc.rule_code = t.rule_code
+            <if test="validationAction != null">
+                <if test='validationAction == "IGNORE"'>
+                    inner join issue_validation as iv on iv.action = 'IGNORE' and (
+                </if>
+                <if test='validationAction != "IGNORE"'>
+                    left join issue_validation as iv on iv.action = 'IGNORE' and (
+                </if>
+                (t.rule_code = iv.rule_code and iv.file_path is null and iv.function_name is null and iv.variable_name is null and iv.line_number is null) or
+                ((f2.path like CONCAT('%', iv.file_path, '%') or f1.path like CONCAT('%', iv.file_path, '%')) and iv.rule_code is null and iv.function_name is null and iv.variable_name is null and iv.line_number is null) or
+                (fs.str = iv.function_name and iv.rule_code is null and iv.file_path is null and iv.variable_name is null and iv.line_number is null) or
+
+                (t.rule_code = iv.rule_code and (f2.path like CONCAT('%', iv.file_path, '%') or f1.path like CONCAT('%', iv.file_path, '%')) and iv.function_name is null and iv.variable_name is null and iv.line_number is null) or
+                (t.rule_code = iv.rule_code and fs.str = iv.function_name and iv.file_path is null and iv.variable_name is null and iv.line_number is null) or
+                (t.rule_code = iv.rule_code and vs.str = iv.variable_name and iv.file_path is null and iv.function_name is null and iv.line_number is null) or
+                ((f2.path like CONCAT('%', iv.file_path, '%') or f1.path like CONCAT('%', iv.file_path, '%')) and fs.str = iv.function_name and iv.rule_code is null and iv.variable_name is null and iv.line_number is null) or
+                ((f2.path like CONCAT('%', iv.file_path, '%') or f1.path like CONCAT('%', iv.file_path, '%')) and vs.str = iv.variable_name and iv.rule_code is null and iv.function_name is null and iv.line_number is null) or
+                (fs.str = iv.function_name and vs.str = iv.variable_name and iv.rule_code is null and iv.file_path is null and iv.line_number is null) or
+
+                (t.rule_code = iv.rule_code and (f2.path like CONCAT('%', iv.file_path, '%') or f1.path like CONCAT('%', iv.file_path, '%')) and fs.str = iv.function_name and iv.variable_name is null and iv.line_number is null) or
+                (t.rule_code = iv.rule_code and (f2.path like CONCAT('%', iv.file_path, '%') or f1.path like CONCAT('%', iv.file_path, '%')) and vs.str = iv.variable_name and iv.function_name is null and iv.line_number is null) or
+                ((f2.path like CONCAT('%', iv.file_path, '%') or f1.path like CONCAT('%', iv.file_path, '%')) and fs.str = iv.function_name and vs.str = iv.variable_name and iv.rule_code is null and iv.line_number is null) or
+
+                (t.rule_code = iv.rule_code and (f2.path like CONCAT('%', iv.file_path, '%') or f1.path like CONCAT('%', iv.file_path, '%')) and fs.str = iv.function_name and vs.str = iv.variable_name and iv.line_number is null) or
+
+                (t.rule_code = iv.rule_code and (f2.path like CONCAT('%', iv.file_path, '%') or f1.path like CONCAT('%', iv.file_path, '%')) and fs.str = iv.function_name and vs.str = iv.variable_name and (iv.line_number = t.sink_line_no or iv.line_number = t.src_line_no))
+                )
+            </if>
             where t.project_id = #{projectId, jdbcType=OTHER, typeHandler=com.xcal.api.config.UUIDTypeHandler}::uuid
+            <if test='validationAction != null and validationAction != "IGNORE"'>
+                and (iv.action is null or iv.action != 'IGNORE')
+            </if>
             <if test="ruleCodes != null and ruleCodes.size() > 0">
                 and
                 <foreach collection="ruleCodes" open="(" close=")" separator=" or " item="item">
@@ -1658,7 +1886,37 @@
         left join (select rule_code, count(1) as issue_group_count from "issue_group" where project_id =
         #{projectId, jdbcType=OTHER, typeHandler=com.xcal.api.config.UUIDTypeHandler}::uuid group by rule_code) as rc on
         rc.rule_code = t.rule_code
+        <if test="validationAction != null">
+            <if test='validationAction == "IGNORE"'>
+                inner join issue_validation as iv on iv.action = 'IGNORE' and (
+            </if>
+            <if test='validationAction != "IGNORE"'>
+                left join issue_validation as iv on iv.action = 'IGNORE' and (
+            </if>
+            (t.rule_code = iv.rule_code and iv.file_path is null and iv.function_name is null and iv.variable_name is null and iv.line_number is null) or
+            ((f2.path like CONCAT('%', iv.file_path, '%') or f1.path like CONCAT('%', iv.file_path, '%')) and iv.rule_code is null and iv.function_name is null and iv.variable_name is null and iv.line_number is null) or
+            (fs.str = iv.function_name and iv.rule_code is null and iv.file_path is null and iv.variable_name is null and iv.line_number is null) or
+
+            (t.rule_code = iv.rule_code and (f2.path like CONCAT('%', iv.file_path, '%') or f1.path like CONCAT('%', iv.file_path, '%')) and iv.function_name is null and iv.variable_name is null and iv.line_number is null) or
+            (t.rule_code = iv.rule_code and fs.str = iv.function_name and iv.file_path is null and iv.variable_name is null and iv.line_number is null) or
+            (t.rule_code = iv.rule_code and vs.str = iv.variable_name and iv.file_path is null and iv.function_name is null and iv.line_number is null) or
+            ((f2.path like CONCAT('%', iv.file_path, '%') or f1.path like CONCAT('%', iv.file_path, '%')) and fs.str = iv.function_name and iv.rule_code is null and iv.variable_name is null and iv.line_number is null) or
+            ((f2.path like CONCAT('%', iv.file_path, '%') or f1.path like CONCAT('%', iv.file_path, '%')) and vs.str = iv.variable_name and iv.rule_code is null and iv.function_name is null and iv.line_number is null) or
+            (fs.str = iv.function_name and vs.str = iv.variable_name and iv.rule_code is null and iv.file_path is null and iv.line_number is null) or
+
+            (t.rule_code = iv.rule_code and (f2.path like CONCAT('%', iv.file_path, '%') or f1.path like CONCAT('%', iv.file_path, '%')) and fs.str = iv.function_name and iv.variable_name is null and iv.line_number is null) or
+            (t.rule_code = iv.rule_code and (f2.path like CONCAT('%', iv.file_path, '%') or f1.path like CONCAT('%', iv.file_path, '%')) and vs.str = iv.variable_name and iv.function_name is null and iv.line_number is null) or
+            ((f2.path like CONCAT('%', iv.file_path, '%') or f1.path like CONCAT('%', iv.file_path, '%')) and fs.str = iv.function_name and vs.str = iv.variable_name and iv.rule_code is null and iv.line_number is null) or
+
+            (t.rule_code = iv.rule_code and (f2.path like CONCAT('%', iv.file_path, '%') or f1.path like CONCAT('%', iv.file_path, '%')) and fs.str = iv.function_name and vs.str = iv.variable_name and iv.line_number is null) or
+
+            (t.rule_code = iv.rule_code and (f2.path like CONCAT('%', iv.file_path, '%') or f1.path like CONCAT('%', iv.file_path, '%')) and fs.str = iv.function_name and vs.str = iv.variable_name and (iv.line_number = t.sink_line_no or iv.line_number = t.src_line_no))
+            )
+        </if>
         where t.project_id = #{projectId, jdbcType=OTHER, typeHandler=com.xcal.api.config.UUIDTypeHandler}::uuid
+        <if test='validationAction != null and validationAction != "IGNORE"'>
+            and (iv.action is null or iv.action != 'IGNORE')
+        </if>
         <if test="ruleCodes != null and ruleCodes.size() > 0">
             and
             <foreach collection="ruleCodes" open="(" close=")" separator=" or " item="item">
@@ -1775,7 +2033,37 @@
         left join (select rule_code, count(1) as issue_group_count from "issue_group" where project_id =
         #{projectId, jdbcType=OTHER, typeHandler=com.xcal.api.config.UUIDTypeHandler}::uuid group by rule_code) as rc on
         rc.rule_code = t.rule_code
+        <if test="validationAction != null">
+            <if test='validationAction == "IGNORE"'>
+                inner join issue_validation as iv on iv.action = 'IGNORE' and (
+            </if>
+            <if test='validationAction != "IGNORE"'>
+                left join issue_validation as iv on iv.action = 'IGNORE' and (
+            </if>
+            (t.rule_code = iv.rule_code and iv.file_path is null and iv.function_name is null and iv.variable_name is null and iv.line_number is null) or
+            ((f2.path like CONCAT('%', iv.file_path, '%') or f1.path like CONCAT('%', iv.file_path, '%')) and iv.rule_code is null and iv.function_name is null and iv.variable_name is null and iv.line_number is null) or
+            (fs.str = iv.function_name and iv.rule_code is null and iv.file_path is null and iv.variable_name is null and iv.line_number is null) or
+
+            (t.rule_code = iv.rule_code and (f2.path like CONCAT('%', iv.file_path, '%') or f1.path like CONCAT('%', iv.file_path, '%')) and iv.function_name is null and iv.variable_name is null and iv.line_number is null) or
+            (t.rule_code = iv.rule_code and fs.str = iv.function_name and iv.file_path is null and iv.variable_name is null and iv.line_number is null) or
+            (t.rule_code = iv.rule_code and vs.str = iv.variable_name and iv.file_path is null and iv.function_name is null and iv.line_number is null) or
+            ((f2.path like CONCAT('%', iv.file_path, '%') or f1.path like CONCAT('%', iv.file_path, '%')) and fs.str = iv.function_name and iv.rule_code is null and iv.variable_name is null and iv.line_number is null) or
+            ((f2.path like CONCAT('%', iv.file_path, '%') or f1.path like CONCAT('%', iv.file_path, '%')) and vs.str = iv.variable_name and iv.rule_code is null and iv.function_name is null and iv.line_number is null) or
+            (fs.str = iv.function_name and vs.str = iv.variable_name and iv.rule_code is null and iv.file_path is null and iv.line_number is null) or
+
+            (t.rule_code = iv.rule_code and (f2.path like CONCAT('%', iv.file_path, '%') or f1.path like CONCAT('%', iv.file_path, '%')) and fs.str = iv.function_name and iv.variable_name is null and iv.line_number is null) or
+            (t.rule_code = iv.rule_code and (f2.path like CONCAT('%', iv.file_path, '%') or f1.path like CONCAT('%', iv.file_path, '%')) and vs.str = iv.variable_name and iv.function_name is null and iv.line_number is null) or
+            ((f2.path like CONCAT('%', iv.file_path, '%') or f1.path like CONCAT('%', iv.file_path, '%')) and fs.str = iv.function_name and vs.str = iv.variable_name and iv.rule_code is null and iv.line_number is null) or
+
+            (t.rule_code = iv.rule_code and (f2.path like CONCAT('%', iv.file_path, '%') or f1.path like CONCAT('%', iv.file_path, '%')) and fs.str = iv.function_name and vs.str = iv.variable_name and iv.line_number is null) or
+
+            (t.rule_code = iv.rule_code and (f2.path like CONCAT('%', iv.file_path, '%') or f1.path like CONCAT('%', iv.file_path, '%')) and fs.str = iv.function_name and vs.str = iv.variable_name and (iv.line_number = t.sink_line_no or iv.line_number = t.src_line_no))
+            )
+        </if>
         where t.project_id = #{projectId, jdbcType=OTHER, typeHandler=com.xcal.api.config.UUIDTypeHandler}::uuid
+        <if test='validationAction != null and validationAction != "IGNORE"'>
+            and (iv.action is null or iv.action != 'IGNORE')
+        </if>
         <if test="ruleCodes != null and ruleCodes.size() > 0">
             and
             <foreach collection="ruleCodes" open="(" close=")" separator=" or " item="item">

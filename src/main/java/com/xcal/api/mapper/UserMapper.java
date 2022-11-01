@@ -35,6 +35,7 @@ public interface UserMapper {
             @Param("certainty") String certainty,
             @Param("dsrType") List<String> dsrType,
             @Param("criticality") String criticality,
+            @Param("validationAction") String validationAction,
             @Param("searchValues") List<String> searchValues,
             @Param("offset") int offset,
             @Param("limit") int limit
@@ -56,6 +57,7 @@ public interface UserMapper {
             @Param("dsrType") List<String> dsrType,
             @Param("criticality") String criticality,
             @Param("assigned") Boolean assigned,
+            @Param("validationAction") String validationAction,
             @Param("searchValues") List<String> searchValues
     );
 

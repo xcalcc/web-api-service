@@ -1,0 +1,117 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!--
+  ~ Copyright (C) 2019-2022 Xcalibyte (Shenzhen) Limited.
+  ~ Licensed under the Apache License, Version 2.0 (the "License");
+  ~ you may not use this file except in compliance with the License.
+  ~ You may obtain a copy of the License at
+  ~ http://www.apache.org/licenses/LICENSE-2.0
+  ~ Unless required by applicable law or agreed to in writing, software
+  ~ distributed under the License is distributed on an "AS IS" BASIS,
+  ~ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+  ~ See the License for the specific language governing permissions and
+  ~ limitations under the License.
+  -->
+
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.xcal.api.mapper.IssueValidationMapper">
+    <resultMap id="IssueValidation" type="com.xcal.api.entity.v3.IssueValidation">
+        <result property="id" column="id" jdbcType="OTHER"
+                typeHandler="com.xcal.api.config.UUIDTypeHandler"/>
+        <result property="projectId" column="project_id" jdbcType="OTHER"
+                typeHandler="com.xcal.api.config.UUIDTypeHandler"/>
+        <result property="scanTaskId" column="scan_task_id" jdbcType="OTHER"
+                typeHandler="com.xcal.api.config.UUIDTypeHandler"/>
+        <result property="ruleCode" column="rule_code" jdbcType="VARCHAR"/>
+        <result property="filePath" column="file_path" jdbcType="VARCHAR"/>
+        <result property="functionName" column="function_name" jdbcType="VARCHAR"/>
+        <result property="variableName" column="variable_name" jdbcType="VARCHAR"/>
+        <result property="lineNumber" column="line_number" jdbcType="INTEGER"/>
+        <result property="type" column="type" jdbcType="VARCHAR"/>
+        <result property="action" column="action" jdbcType="VARCHAR"/>
+        <result property="scope" column="scope" jdbcType="VARCHAR"/>
+        <result property="createdBy" column="created_by" jdbcType="VARCHAR"/>
+        <result property="createdOn" column="created_on" jdbcType="TIMESTAMP"/>
+        <result property="modifiedBy" column="modified_by" jdbcType="VARCHAR"/>
+        <result property="modifiedOn" column="modified_on" jdbcType="TIMESTAMP"/>
+    </resultMap>
+
+    <insert id="addIssueValidation">
+        insert into "issue_validation" (
+        id, project_id, scan_task_id, rule_code, file_path, function_name, variable_name, line_number,
+        type, action, scope, created_by, created_on, modified_by, modified_on
+        )
+        values (
+        #{issueValidation.id, jdbcType=OTHER, typeHandler=com.xcal.api.config.UUIDTypeHandler}::uuid,
+        #{issueValidation.projectId, jdbcType=OTHER, typeHandler=com.xcal.api.config.UUIDTypeHandler}::uuid,
+        #{issueValidation.scanTaskId, jdbcType=OTHER, typeHandler=com.xcal.api.config.UUIDTypeHandler}::uuid,
+        #{issueValidation.ruleCode},
+        #{issueValidation.filePath},
+        #{issueValidation.functionName},
+        #{issueValidation.variableName},
+        #{issueValidation.lineNumber},
+        #{issueValidation.type},
+        #{issueValidation.action},
+        #{issueValidation.scope},
+        #{issueValidation.createdBy},
+        #{issueValidation.createdOn},
+        #{issueValidation.modifiedBy},
+        #{issueValidation.modifiedOn}
+        )
+    </insert>
+
+    <select id="listIssueValidations" resultMap="IssueValidation">
+        select * from "issue_validation"
+        offset #{offset} limit #{limit}
+    </select>
+
+    <select id="searchIssueValidations" resultMap="IssueValidation">
+        select * from "issue_validation"
+        <where>
+            <if test="type != null">
+                type = #{type}
+            </if>
+            <if test="action != null">
+                and action = #{action}
+            </if>
+            <if test="scope != null">
+                and scope = #{scope}
+            </if>
+        </where>
+        offset #{offset} limit #{limit}
+    </select>
+
+    <select id="getIssueValidationCount" resultType="java.lang.Long">
+        select count(1) from "issue_validation"
+        <where>
+            <if test="type != null">
+                type = #{type}
+            </if>
+            <if test="action != null">
+                and action = #{action}
+            </if>
+            <if test="scope != null">
+                and scope = #{scope}
+            </if>
+        </where>
+    </select>
+
+    <select id="findIssueValidationById" resultMap="IssueValidation">
+        select * from "issue_validation" where id = #{id}
+    </select>
+
+    <update id="updateIssueValidation">
+        update "issue_validation" set
+        action = #{issueValidation.action},
+        scope = #{issueValidation.scope},
+        modified_by = #{issueValidation.modifiedBy},
+        modified_on = #{issueValidation.modifiedOn}
+        where id = #{issueValidation.id, jdbcType=OTHER, typeHandler=com.xcal.api.config.UUIDTypeHandler}::uuid
+    </update>
+
+    <delete id="deleteIssueValidationById">
+        delete from "issue_validation" where id = #{id}
+    </delete>
+
+</mapper>

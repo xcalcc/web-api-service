@@ -61,6 +61,9 @@ public class SearchIssueGroupRequest {
 	@ApiModelProperty(notes = "issue criticality, value from 1-9, 1 means lowest, 9 means highest", example = "6")
 	protected String criticality;
 
+	@ApiModelProperty(notes = "validation action, value: IGNORE, NON-IGNORE", example = "IGNORE")
+	protected String validationAction;
+
 	protected String searchValue;
 
 	@Data

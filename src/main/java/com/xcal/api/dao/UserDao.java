@@ -33,6 +33,7 @@ public interface UserDao {
             String certainty,
             List<String> dsrType,
             String criticality,
+            String validationAction,
             String searchValue,
             Pageable pageable
     );
@@ -54,6 +55,7 @@ public interface UserDao {
             List<String> dsrType,
             String criticality,
             Boolean assigned,
+            String validationAction,
             String searchValue
     );
 
